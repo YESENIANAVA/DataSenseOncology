@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>DataSense Oncology - Información Oncológica</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <header class="bg-gray-900 text-white p-4 shadow-lg flex justify-between items-center px-8">
+        <div class="flex items-center gap-3">
+            <i data-lucide="activity" class="text-pink-500"></i>
+            <h1 class="font-bold uppercase tracking-widest">Expediente Oncológico</h1>
+        </div>
+        <a href="/dashboard?user={{ doctor.username }}" class="text-sm font-bold bg-gray-800 hover:bg-gray-700 px-4 py-2 rounded-lg transition flex items-center gap-2">
+            <i data-lucide="arrow-left" class="w-4 h-4 text-white"></i> Volver
+        </a>
+    </header>
+
+    <main class="p-6 max-w-[1000px] mx-auto mt-4">
+        <div class="bg-white rounded-3xl shadow-xl overflow-hidden border border-gray-200">
+            <div class="p-8 bg-gray-50 border-b">
+                <h2 class="text-2xl font-black text-pink-800 uppercase italic">Registro de Tumor</h2>
+                <p class="text-xs text-gray-500 font-bold uppercase tracking-widest">Datos para Predicción Matemática e IA</p>
+            </div>
+
+            <form action="/guardar_tumor" method="POST" class="p-8 space-y-8">
+                
+                <div class="mb-6">
+                    <label class="block text-[10px] font-bold text-gray-500 uppercase mb-2">1. Seleccionar Paciente</label>
+                    
+                    <div class="relative w-full">
+                        <div class="relative">
+                            <i data-lucide="search" class="absolute left-3 top-3 w-5 h-5 text-gray-400"></i>
+                            <input type="text" id="buscadorPaciente" onkeyup="filtrarPacientes()" placeholder="Ej. Janeth Ramos..." autocomplete="off"
+                                class="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-pink-500 outline-none transition">
+                        </div>
+                        
+                        <ul id="listaResultados" class="absolute z-10 w-full bg-white border border-gray-200 rounded-xl mt-1 shadow-2xl hidden max-h-48 overflow-y-auto">
+                            </ul>
+                    </div>
+
+                    <div id="pacienteSeleccionado" class="hidden mt-4 bg-pink-50 border border-pink-200 p-4 rounded-xl flex items-center justify-between">
+                        <div>
+                            <p class="text-[10px] font-bold text-pink-600 uppercase tracking-widest">Paciente Vinculado al Expediente</p>
+                            <p id="nombrePacienteLabel" class="text-lg font-black text-pink-900"></p>
+                            <input type="hidden" id="pacienteIdSecreto" name="paciente_id" required>
+                        </div>
+                        <button type="button" onclick="limpiarPaciente()" class="text-gray-400 hover:text-red-500 transition p-2">
+                            <i data-lucide="x-circle"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div id="camposTumor" class="opacity-50 pointer-events-none transition-opacity duration-300 space-y-6">
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div class="space-y-2">
+                            <label class="text-[10px] font-black uppercase text-pink-700">Tipo de Tumor</label>
+                            <input type="text" name="tipo_tumor" placeholder="Ej: Carcinoma" required class="w-full p-3 bg-gray-50 border border-gray-300 rounded-xl text-sm focus:outline-pink-500">
+                        </div>
+
+                        <div class="space-y-2">
+                            <label class="text-[10px] font-black uppercase text-pink-700">Ubicación Anatómica</label>
+                            <input type="text" name="ubicacion" placeholder="Ej: Lóbulo Superior" required class="w-full p-3 bg-gray-50 border border-gray-300 rounded-xl text-sm focus:outline-pink-500">
+                        </div>
+
+                        <div class="space-y-2">
+                            <label class="text-[10px] font-black uppercase text-pink-700">Etapa Clínica</label>
+                            <select name="etapa" required class="w-full p-3 bg-gray-50 border border-gray-300 rounded-xl text-sm focus:outline-pink-500">
+                                <option value="I">Etapa I</option>
+                                <option value="II">Etapa II</option>
+                                <option value="III">Etapa III</option>
+                                <option value="IV">Etapa IV</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="p-6 bg-pink-50 rounded-2xl border border-pink-100 mt-6">
+                        <h3 class="text-pink-800 font-bold text-xs uppercase mb-4 tracking-tighter">Dimensiones del Tumor (mm)</h3>
+                        <div class="grid grid-cols-3 gap-4">
+                            <input type="number" step="0.01" name="largo" placeholder="Largo" required class="p-3 bg-white border border-gray-300 rounded-xl text-sm focus:outline-pink-500">
+                            <input type="number" step="0.01" name="ancho" placeholder="Ancho" required class="p-3 bg-white border border-gray-300 rounded-xl text-sm focus:outline-pink-500">
+                            <input type="number" step="0.01" name="profundidad" placeholder="Profundidad" required class="p-3 bg-white border border-gray-300 rounded-xl text-sm focus:outline-pink-500">
+                        </div>
+                    </div>
+
+                    <input type="hidden" name="medico" value="{{ doctor.username }}">
+                    
+                    <button type="submit" class="w-full bg-pink-700 text-white font-bold py-4 rounded-2xl hover:bg-pink-800 transition shadow-lg uppercase tracking-widest text-sm flex justify-center items-center gap-2 mt-6">
+                        <i data-lucide="save" class="w-5 h-5"></i> Registrar en Expediente
+                    </button>
+                </div>
+
+            </form>
+        </div>
+    </main>
+
+    <script>
+        lucide.createIcons();
+
+        // Cargar pacientes desde la Base de Datos (Jinja2)
+        const pacientesDB = [
+            {% for p in pacientes %}
+            { id: {{ p.id }}, nombre: "{{ p.nombre_completo }}" },
+            {% endfor %}
+        ];
+
+        // Función para filtrar y mostrar sugerencias
+        function filtrarPacientes() {
+            const input = document.getElementById('buscadorPaciente').value.toLowerCase();
+            const lista = document.getElementById('listaResultados');
+            lista.innerHTML = ''; 
+
+            if (input.length < 1) {
+                lista.classList.add('hidden');
+                return;
+            }
+
+            const filtrados = pacientesDB.filter(p => 
+                p.nombre.toLowerCase().includes(input) || p.id.toString().includes(input)
+            );
+
+            if (filtrados.length > 0) {
+                lista.classList.remove('hidden');
+                filtrados.forEach(p => {
+                    const li = document.createElement('li');
+                    li.className = "p-3 hover:bg-pink-50 cursor-pointer border-b border-gray-100 text-sm text-gray-700 flex justify-between";
+                    li.innerHTML = `<span><i data-lucide="user" class="inline w-4 h-4 mr-2 text-gray-400"></i>${p.nombre}</span> <span class="text-[10px] font-bold text-pink-600">ID: ${p.id}</span>`;
+                    li.onclick = () => seleccionarPaciente(p.id, p.nombre);
+                    lista.appendChild(li);
+                });
+                lucide.createIcons();
+            } else {
+                lista.classList.remove('hidden');
+                lista.innerHTML = `<li class="p-3 text-sm text-gray-400 italic text-center">No se encontraron pacientes.</li>`;
+            }
+        }
+
+        // Función al seleccionar un paciente
+        function seleccionarPaciente(id, nombre) {
+            document.getElementById('buscadorPaciente').value = '';
+            document.getElementById('listaResultados').classList.add('hidden');
+            
+            // Llenar tarjeta
+            document.getElementById('pacienteSeleccionado').classList.remove('hidden');
+            document.getElementById('nombrePacienteLabel').innerText = nombre;
+            document.getElementById('pacienteIdSecreto').value = id;
+            
+            // Desbloquear resto del formulario
+            document.getElementById('camposTumor').classList.remove('opacity-50', 'pointer-events-none');
+        }
+
+        // Función para cambiar de paciente
+        function limpiarPaciente() {
+            document.getElementById('pacienteSeleccionado').classList.add('hidden');
+            document.getElementById('pacienteIdSecreto').value = '';
+            
+            // Bloquear formulario
+            document.getElementById('camposTumor').classList.add('opacity-50', 'pointer-events-none');
+        }
+    </script>
+</body>
+</html>

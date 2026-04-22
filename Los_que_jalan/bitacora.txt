@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DataSense Oncology - Bitácora de Actividad</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen font-sans">
+
+    <header class="bg-gray-900 text-white p-4 shadow-lg flex justify-between items-center px-8">
+        <div class="flex items-center gap-3">
+            <i data-lucide="scroll-text" class="text-gray-400"></i>
+            <h1 class="font-bold text-lg tracking-widest uppercase">Historial del Sistema</h1>
+        </div>
+        <a href="/dashboard?user={{ doctor.username }}" class="bg-gray-800 hover:bg-gray-700 px-4 py-2 rounded-lg text-sm font-bold transition flex items-center gap-2">
+            <i data-lucide="home" class="w-4 h-4"></i> Panel Principal
+        </a>
+    </header>
+
+    <main class="p-6 max-w-[1400px] mx-auto">
+        <div class="bg-white rounded-3xl shadow-xl border border-gray-200 overflow-hidden">
+            
+            <div class="p-6 border-b border-gray-100 bg-gray-50/50">
+                <div class="flex flex-col xl:flex-row gap-6 justify-between items-end">
+                    
+                    <div class="w-full xl:w-1/3">
+                        <label class="block text-[10px] font-bold text-gray-400 uppercase mb-2 ml-1">Buscar Evento</label>
+                        <div class="relative group">
+                            <span class="absolute inset-y-0 left-0 flex items-center pl-3">
+                                <i data-lucide="search" class="w-4 h-4 text-gray-400 group-focus-within:text-gray-600 transition-colors"></i>
+                            </span>
+                            <input type="text" id="textSearch" onkeyup="aplicarFiltros()" 
+                                   placeholder="Médico, acción o detalle..." 
+                                   class="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-gray-400 outline-none shadow-sm transition-all">
+                        </div>
+                    </div>
+
+                    <div class="w-full xl:w-auto flex flex-col md:flex-row gap-4">
+                        <div>
+                            <label class="block text-[10px] font-bold text-gray-400 uppercase mb-2 ml-1">Fecha Inicial</label>
+                            <input type="date" id="dateStart" onchange="aplicarFiltros()" 
+                                   class="px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-gray-400 outline-none shadow-sm text-gray-600">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-gray-400 uppercase mb-2 ml-1">Fecha Final</label>
+                            <input type="date" id="dateEnd" onchange="aplicarFiltros()" 
+                                   class="px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-gray-400 outline-none shadow-sm text-gray-600">
+                        </div>
+                        <button onclick="limpiarFiltros()" class="self-end px-4 py-2 bg-gray-200 text-gray-600 rounded-xl text-xs font-bold hover:bg-gray-300 transition">
+                            Limpiar
+                        </button>
+                    </div>
+
+                </div>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse" id="logTable">
+                    <thead>
+                        <tr class="bg-gray-50 text-[10px] font-bold text-gray-400 uppercase tracking-widest border-b border-gray-100">
+                            <th class="p-6">Fecha y Hora</th>
+                            <th class="p-6">Usuario</th>
+                            <th class="p-6">Acción</th>
+                            <th class="p-6">Detalle del Movimiento</th>
+                            <th class="p-6 text-center">Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-50">
+                        {% for log in logs %}
+                        <tr class="log-row hover:bg-gray-50/50 transition-colors">
+                            <td class="p-6 text-xs font-mono text-gray-500 log-date">{{ log.fecha }}</td>
+                            <td class="p-6">
+                                <div class="flex items-center gap-2">
+                                    <div class="w-7 h-7 bg-gray-200 text-gray-700 rounded-full flex items-center justify-center text-[10px] font-bold uppercase">
+                                        {{ log.usuario[:2] }}
+                                    </div>
+                                    <span class="text-sm font-bold text-gray-700">{{ log.usuario }}</span>
+                                </div>
+                            </td>
+                            <td class="p-6">
+    <span class="px-2 py-1 bg-gray-100 text-gray-800 rounded-md text-[10px] font-black uppercase tracking-tighter">
+        {{ log.accion.split('|')[0] if '|' in log.accion else log.accion }}
+    </span>
+</td>
+<td class="p-6 text-xs text-gray-600 italic">
+    {{ log.accion.split('|')[1] if '|' in log.accion else "Sin detalle" }}
+</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            <div id="noResults" class="hidden p-20 text-center">
+                <i data-lucide="search-x" class="w-12 h-12 text-gray-300 mx-auto mb-4"></i>
+                <p class="text-gray-400 font-medium">No se encontraron registros que coincidan con los filtros.</p>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        lucide.createIcons();
+
+        function aplicarFiltros() {
+            const textFilter = document.getElementById("textSearch").value.toLowerCase();
+            const dateStart = document.getElementById("dateStart").value;
+            const dateEnd = document.getElementById("dateEnd").value;
+            const rows = document.getElementsByClassName("log-row");
+            let countVisible = 0;
+
+            Array.from(rows).forEach(row => {
+                const text = row.textContent.toLowerCase();
+                const rowDateFull = row.querySelector(".log-date").innerText; // Ejemplo: "2026-02-09 14:30:00"
+                const rowDate = rowDateFull.split(" ")[0]; // Solo "2026-02-09"
+
+                // Lógica de validación
+                const matchesText = text.includes(textFilter);
+                const matchesStart = !dateStart || rowDate >= dateStart;
+                const matchesEnd = !dateEnd || rowDate <= dateEnd;
+
+                if (matchesText && matchesStart && matchesEnd) {
+                    row.style.display = "";
+                    countVisible++;
+                } else {
+                    row.style.display = "none";
+                }
+            });
+
+            document.getElementById("noResults").classList.toggle("hidden", countVisible > 0);
+        }
+
+        function limpiarFiltros() {
+            document.getElementById("textSearch").value = "";
+            document.getElementById("dateStart").value = "";
+            document.getElementById("dateEnd").value = "";
+            aplicarFiltros();
+        }
+    </script>
+</body>
+</html>

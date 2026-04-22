@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DataSense Oncology - Panel Principal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @keyframes tracking-in-expand {
+            0% { letter-spacing: -0.5em; opacity: 0; }
+            40% { opacity: 0.6; }
+            100% { opacity: 1; }
+        }
+        .animate-title { animation: tracking-in-expand 1.2s cubic-bezier(0.215, 0.610, 0.355, 1.000) both; }
+        .sidebar-transition { transition: transform 0.3s ease-in-out; }
+    </style>
+</head>
+<body class="bg-gray-50 flex flex-col h-screen overflow-hidden">
+
+    <header class="bg-gray-900 text-gray-100 p-4 shadow-md flex justify-between items-center z-50 border-b border-gray-800">
+        <div class="flex items-center gap-4">
+            <button onclick="toggleSidebar()" class="hover:bg-gray-700 p-2 rounded-lg transition text-gray-300 hover:text-white">
+                <i data-lucide="menu"></i>
+            </button>
+            <span class="font-bold text-lg tracking-tight italic">DataSense <span class="text-gray-400">Oncology</span></span>
+        </div>
+        <a href="/" class="bg-gray-700 hover:bg-gray-600 px-3 py-1.5 rounded-lg font-semibold transition flex items-center gap-2 text-sm shadow-sm text-gray-200 hover:text-white border border-gray-600">
+            <i data-lucide="log-out" class="w-4 h-4"></i> Salir
+        </a>
+    </header>
+
+    <div class="flex flex-1 overflow-hidden relative">
+        
+        <aside id="sidebar" class="absolute lg:relative lg:translate-x-0 -translate-x-full sidebar-transition w-72 bg-white h-full shadow-2xl border-r border-gray-200 z-40 flex flex-col">
+            
+            <nav class="p-4 flex-1 space-y-2 overflow-y-auto">
+                <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest px-4 mb-4 font-mono">Gestión Clínica</p>
+                
+                <a href="/gestion_pacientes?user={{ doctor.username }}" class="flex items-center gap-3 p-3 text-gray-600 hover:bg-gray-100 hover:text-gray-900 rounded-xl transition group">
+                    <i data-lucide="users" class="w-5 h-5 text-gray-400 group-hover:text-gray-800 transition-colors"></i>
+                    <span class="font-medium text-sm">Gestión de Pacientes</span>
+                </a>
+                
+                <a href="/historial_medico?user={{ doctor.username }}" class="flex items-center gap-3 p-3 text-gray-600 hover:bg-gray-100 hover:text-gray-900 rounded-xl transition group">
+                    <i data-lucide="folder-medical" class="w-5 h-5 text-gray-400 group-hover:text-gray-800 transition-colors"></i>
+                    <span class="font-medium text-sm">Historial Médico</span>
+                </a>
+
+                <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest px-4 mb-4 mt-6 font-mono">Análisis y Predicción</p>
+
+                <a href="/informacion_oncologica?user={{ doctor.username }}" class="flex items-center gap-3 p-3 text-gray-600 hover:bg-gray-100 hover:text-gray-900 rounded-xl transition group">
+                    <i data-lucide="microscope" class="w-5 h-5 text-gray-400 group-hover:text-gray-800 transition-colors"></i>
+                    <span class="font-medium text-sm">Información Oncológica</span>
+                </a>
+                
+                <a href="/prediccion_crecimiento?user={{ doctor.username }}" class="flex items-center gap-3 p-3 text-gray-600 hover:bg-gray-100 hover:text-gray-900 rounded-xl transition group">
+                    <i data-lucide="trending-up" class="w-5 h-5 text-gray-400 group-hover:text-gray-800 transition-colors"></i>
+                    <span class="font-medium text-sm">Predicción de Crecimiento</span>
+                </a>
+
+                {% if doctor.nivel_acceso >= 1 %}
+                <div class="pt-4 mt-4 border-t border-gray-100">
+                    <p class="text-[10px] font-bold text-gray-500 uppercase tracking-widest px-4 mb-2 font-mono">Panel Administrativo</p>
+                    
+                    <a href="/gestion_usuarios?user={{ doctor.username }}" class="flex items-center gap-3 p-3 text-gray-600 hover:bg-gray-100 hover:text-gray-900 rounded-xl transition group">
+                        <i data-lucide="shield-check" class="w-5 h-5 text-gray-400 group-hover:text-gray-800 transition-colors"></i>
+                        <span class="font-medium text-sm">Gestión de Usuarios</span>
+                    </a>
+
+                    <a href="/bitacora?user={{ doctor.username }}" class="flex items-center gap-3 p-3 text-gray-600 hover:bg-gray-100 hover:text-gray-900 rounded-xl transition group">
+                        <i data-lucide="clipboard-list" class="w-5 h-5 text-gray-400 group-hover:text-gray-800 transition-colors"></i>
+                        <span class="font-medium text-sm">Bitácora de Actividad</span>
+                    </a>
+                </div>
+                {% endif %}
+            </nav>
+
+            <div class="p-4 border-t border-gray-100 bg-gray-50">
+                <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-4">
+                    <div class="flex items-center gap-3 mb-3">
+                        <div class="w-12 h-12 rounded-full border-2 border-gray-400 p-0.5 overflow-hidden shadow-sm bg-gray-100">
+                            <img src="/static/{{ doctor.foto_ruta }}" alt="Perfil" class="w-full h-full object-cover rounded-full" 
+                                onerror="this.src='https://ui-avatars.com/api/?name={{ doctor.nombre_completo }}&background=111827&color=fff'">
+                        </div>
+                        <div class="overflow-hidden">
+                            <h3 class="font-bold text-gray-800 text-xs truncate">{{ doctor.nombre_completo }}</h3>
+                            <p class="text-gray-500 text-[10px] font-bold uppercase truncate">{{ doctor.especialidad }}</p>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-gray-100 rounded-lg p-2 border border-gray-200 mb-2 text-center">
+                        <p class="text-[8px] text-gray-500 font-bold uppercase tracking-tighter">Cédula Profesional</p>
+                        <p class="text-[10px] font-mono text-gray-800 font-bold tracking-tight">{{ doctor.cedula }}</p>
+                    </div>
+
+                    <div class="flex items-center gap-2 justify-center">
+                        {% if doctor.nivel_acceso == 2 %}
+                            <span class="bg-gray-800 text-gray-100 px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-widest border border-gray-700">SuperAdmin</span>
+                        {% elif doctor.nivel_acceso == 1 %}
+                            <span class="bg-gray-600 text-gray-100 px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-widest">Admin</span>
+                        {% else %}
+                            <span class="w-1.5 h-1.5 bg-gray-500 rounded-full animate-pulse"></span>
+                            <span class="text-[9px] font-bold uppercase tracking-widest text-gray-500 italic">Sesión Médica</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <main class="flex-1 flex flex-col items-center justify-center p-8 text-center bg-gray-50">
+            <h1 class="text-6xl md:text-8xl font-black text-gray-800 animate-title mb-6 tracking-tighter">
+                DataSense <span class="text-gray-500">Oncology</span>
+            </h1>
+            <div class="max-w-2xl">
+                <p class="text-lg md:text-xl text-gray-500 font-medium leading-relaxed">
+                    Inferencia computacional de la progresión  neoplásica.
+                </p>
+                <div class="mt-8 flex gap-4 justify-center">
+                    <div class="h-1 w-12 bg-gray-800 rounded-full"></div>
+                    <div class="h-1 w-12 bg-gray-600 rounded-full"></div>
+                    <div class="h-1 w-12 bg-gray-400 rounded-full"></div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        lucide.createIcons();
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('-translate-x-full');
+        }
+    </script>
+</body>
+</html>

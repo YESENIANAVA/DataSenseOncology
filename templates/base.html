@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}DataSense Oncology{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <style>
+        
+        /* SCROLLBAR SUTIL Y ELEGANTE */
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        
+        /* Ocultar barra de scroll en el panel mini */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+    {% block extra_head %}{% endblock %}
+</head>
+<body class="bg-[#ebebeb] text-slate-800 font-sans h-screen flex flex-col overflow-hidden">
+hola hggjg
+    <header class="bg-[#0f172a] text-white h-[72px] px-4 md:px-6 shadow-md flex justify-between items-center z-30 shrink-0 w-full">
+        
+        <div class="flex items-center gap-4">
+            <button onclick="toggleSidebar()" class="text-white hover:text-gray-300 transition focus:outline-none rounded-full p-1 hover:bg-slate-800">
+                <i data-lucide="menu" class="w-7 h-7"></i>
+            </button>
+            <h1 class="font-black text-xl italic tracking-tighter hidden sm:block">
+                DataSense <span class="text-slate-400 font-normal">Oncology</span>
+            </h1>
+        </div>
+        
+        <div class="flex items-center gap-3 md:gap-4">
+            <div class="hidden md:flex flex-col text-right">
+                <span class="text-sm font-bold text-white leading-tight">{{ doctor.nombre_completo }}</span>
+                <div class="flex items-center justify-end gap-2 mt-1">
+                    <span class="text-[9px] font-mono text-emerald-400 font-bold uppercase tracking-widest bg-emerald-400/10 border border-emerald-400/20 px-1.5 py-0.5 rounded">
+                        {{ 'SuperAdmin' if doctor.nivel_acceso == 2 else 'Admin' if doctor.nivel_acceso == 1 else 'Doctor' }}
+                    </span>
+                    <span class="text-[10px] text-slate-400 font-mono tracking-tighter" title="Cédula Profesional">
+                        CÉD: {{ doctor.cedula }}
+                    </span>
+                </div>
+            </div>
+            
+            <img src="/static/{{ doctor.foto_ruta }}" onerror="this.src='https://ui-avatars.com/api/?name={{ doctor.nombre_completo }}&background=334155&color=fff'" class="w-10 h-10 md:w-11 md:h-11 rounded-full object-cover border-2 border-slate-600 shadow-sm">
+            
+            <div class="w-px h-8 bg-slate-700 mx-1 md:mx-2 hidden sm:block"></div>
+
+            <a href="/logout?user={{ doctor.username }}" class="text-xs font-bold bg-slate-800 text-gray-300 hover:text-white hover:bg-red-600 p-2 md:px-4 md:py-2 rounded-xl transition flex items-center gap-2 shadow-sm" title="Cerrar Sesión">
+                <i data-lucide="log-out" class="w-4 h-4"></i> 
+                <span class="hidden md:inline">Salir</span>
+            </a>
+        </div>
+    </header>
+
+    <div class="flex flex-1 overflow-hidden">
+        
+        <aside class="hidden md:flex flex-col w-[80px] bg-[#ebebeb] border-r border-gray-300 shrink-0 overflow-y-auto no-scrollbar py-3">
+            
+            <a href="/gestion_pacientes?user={{ doctor.username }}" class="flex flex-col items-center justify-center w-full py-4 text-slate-600 hover:text-blue-700 hover:bg-gray-200 transition-colors group">
+                <i data-lucide="users" class="w-6 h-6 mb-1.5 group-hover:scale-110 transition-transform"></i>
+                <span class="text-[10px] text-center font-bold">Pacientes</span>
+            </a>
+            
+            <a href="/historial_medico?user={{ doctor.username }}" class="flex flex-col items-center justify-center w-full py-4 text-slate-600 hover:text-blue-700 hover:bg-gray-200 transition-colors group">
+                <i data-lucide="folder-open" class="w-6 h-6 mb-1.5 group-hover:scale-110 transition-transform"></i>
+                <span class="text-[10px] text-center font-bold">Historial</span>
+            </a>
+
+            <div class="w-10 h-px bg-gray-300 mx-auto my-2"></div>
+
+            <a href="/informacion_oncologica?user={{ doctor.username }}" class="flex flex-col items-center justify-center w-full py-4 text-slate-600 hover:text-blue-700 hover:bg-gray-200 transition-colors group">
+                <i data-lucide="microscope" class="w-6 h-6 mb-1.5 group-hover:scale-110 transition-transform"></i>
+                <span class="text-[10px] text-center font-bold">Info Onc</span>
+            </a>
+
+            <a href="/prediccion_crecimiento?user={{ doctor.username }}" class="flex flex-col items-center justify-center w-full py-4 text-slate-600 hover:text-blue-700 hover:bg-gray-200 transition-colors group">
+                <i data-lucide="trending-up" class="w-6 h-6 mb-1.5 group-hover:scale-110 transition-transform"></i>
+                <span class="text-[10px] text-center font-bold">Predicción</span>
+            </a>
+
+            {% if doctor.nivel_acceso >= 1 %}
+            <div class="w-10 h-px bg-gray-300 mx-auto my-2"></div>
+
+            <a href="/gestion_usuarios?user={{ doctor.username }}" class="flex flex-col items-center justify-center w-full py-4 text-slate-600 hover:text-blue-700 hover:bg-gray-200 transition-colors group">
+                <i data-lucide="shield" class="w-6 h-6 mb-1.5 group-hover:scale-110 transition-transform"></i>
+                <span class="text-[10px] text-center font-bold">Usuarios</span>
+            </a>
+
+            <a href="/bitacora?user={{ doctor.username }}" class="flex flex-col items-center justify-center w-full py-4 text-slate-600 hover:text-blue-700 hover:bg-gray-200 transition-colors group">
+                <i data-lucide="clipboard-list" class="w-6 h-6 mb-1.5 group-hover:scale-110 transition-transform"></i>
+                <span class="text-[10px] text-center font-bold">Bitácora</span>
+            </a>
+            {% endif %}
+        </aside>
+
+        <main class="flex-1 overflow-y-auto custom-scrollbar p-4 md:p-8 relative">
+            {% block content %}
+            {% endblock %}
+        </main>
+    </div>
+
+    <div id="overlay" onclick="toggleSidebar()" class="fixed inset-0 bg-black/60 z-40 hidden transition-opacity duration-300 opacity-0 cursor-pointer"></div>
+
+    <aside id="sidebar" class="fixed top-0 left-0 h-full w-[300px] bg-[#ebebeb] shadow-[4px_0_24px_rgba(0,0,0,0.3)] z-50 transform -translate-x-full transition-transform duration-300 ease-in-out flex flex-col border-r border-gray-300">
+        
+        <div class="h-[72px] px-5 border-b border-gray-300 flex items-center justify-between shrink-0 bg-gray-200/50">
+            <h2 class="font-black text-xl italic text-[#0f172a] tracking-tighter">DataSense</h2>
+            <button onclick="toggleSidebar()" class="text-slate-500 hover:text-slate-900 transition rounded-full p-1.5 hover:bg-gray-300">
+                <i data-lucide="x" class="w-6 h-6"></i>
+            </button>
+        </div>
+
+        <div class="p-5 border-b border-gray-300 flex items-center gap-4">
+            <img src="/static/{{ doctor.foto_ruta }}" onerror="this.src='https://ui-avatars.com/api/?name={{ doctor.nombre_completo }}&background=0f172a&color=fff'" class="w-12 h-12 rounded-full object-cover border border-gray-400 shadow-sm">
+            <div class="overflow-hidden">
+                <p class="text-sm font-bold text-slate-800 truncate leading-tight">{{ doctor.nombre_completo }}</p>
+                <span class="bg-slate-800 text-white px-2 py-0.5 rounded-full text-[9px] font-black uppercase mt-1 inline-block">
+                    {{ 'SuperAdmin' if doctor.nivel_acceso == 2 else 'Admin' if doctor.nivel_acceso == 1 else 'Doctor' }}
+                </span>
+            </div>
+        </div>
+
+        <nav class="flex-1 overflow-y-auto py-4 custom-scrollbar">
+            
+            <div class="mb-4">
+                <p class="text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-1 px-6">Gestión Clínica</p>
+                <a href="/gestion_pacientes?user={{ doctor.username }}" class="flex items-center gap-4 px-6 py-3 text-sm font-semibold text-slate-700 hover:bg-gray-300 hover:text-blue-700 transition border-l-4 border-transparent hover:border-blue-600">
+                    <i data-lucide="users" class="w-5 h-5"></i> Gestión de Pacientes
+                </a>
+                <a href="/historial_medico?user={{ doctor.username }}" class="flex items-center gap-4 px-6 py-3 text-sm font-semibold text-slate-700 hover:bg-gray-300 hover:text-blue-700 transition border-l-4 border-transparent hover:border-blue-600">
+                    <i data-lucide="folder-open" class="w-5 h-5"></i> Historial Médico
+                </a>
+            </div>
+
+            <div class="mb-4">
+                <p class="text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-1 px-6">Análisis e IA</p>
+                <a href="/informacion_oncologica?user={{ doctor.username }}" class="flex items-center gap-4 px-6 py-3 text-sm font-semibold text-slate-700 hover:bg-gray-300 hover:text-blue-700 transition border-l-4 border-transparent hover:border-blue-600">
+                    <i data-lucide="microscope" class="w-5 h-5"></i> Info. Oncológica
+                </a>
+                <a href="/prediccion_crecimiento?user={{ doctor.username }}" class="flex items-center gap-4 px-6 py-3 text-sm font-semibold text-slate-700 hover:bg-gray-300 hover:text-blue-700 transition border-l-4 border-transparent hover:border-blue-600">
+                    <i data-lucide="trending-up" class="w-5 h-5"></i> Predicción IA
+                </a>
+            </div>
+
+            {% if doctor.nivel_acceso >= 1 %}
+            <div class="mb-4 border-t border-gray-300 pt-4">
+                <p class="text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-1 px-6">Administración</p>
+                <a href="/gestion_usuarios?user={{ doctor.username }}" class="flex items-center gap-4 px-6 py-3 text-sm font-semibold text-slate-700 hover:bg-gray-300 hover:text-blue-700 transition border-l-4 border-transparent hover:border-blue-600">
+                    <i data-lucide="shield" class="w-5 h-5"></i> Gestión de Usuarios
+                </a>
+                <a href="/bitacora?user={{ doctor.username }}" class="flex items-center gap-4 px-6 py-3 text-sm font-semibold text-slate-700 hover:bg-gray-300 hover:text-blue-700 transition border-l-4 border-transparent hover:border-blue-600">
+                    <i data-lucide="clipboard-list" class="w-5 h-5"></i> Bitácora del Sistema
+                </a>
+            </div>
+            {% endif %}
+        </nav>
+    </aside>
+
+    <script>
+        lucide.createIcons();
+
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('overlay');
+            
+            // Entra/Sale el panel lateral
+            sidebar.classList.toggle('-translate-x-full');
+            
+            // Aparece/Desaparece la pantalla gris oscura
+            if (overlay.classList.contains('hidden')) {
+                overlay.classList.remove('hidden');
+                setTimeout(() => overlay.classList.remove('opacity-0'), 10);
+            } else {
+                overlay.classList.add('opacity-0');
+                setTimeout(() => overlay.classList.add('hidden'), 300);
+            }
+        }
+    </script>
+    {% block extra_scripts %}{% endblock %}
+</body>
+</html>

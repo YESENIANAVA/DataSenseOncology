@@ -1,0 +1,221 @@
+{% extends "base.html" %}
+
+{% block title %}Control de Usuarios - DataSense{% endblock %}
+
+{% block content %}
+<div class="p-4 md:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6 max-w-[1600px] mx-auto">
+    
+    <div class="lg:col-span-4 bg-white rounded-3xl shadow-xl border border-slate-200 overflow-hidden h-fit">
+        <div id="formHeader" class="bg-gray-100 p-6 border-b border-gray-200 text-center">
+            <div class="relative w-32 h-32 mx-auto mb-4">
+                <img id="preview" src="https://ui-avatars.com/api/?name=Nuevo+Medico&background=1f2937&color=fff" 
+                    class="w-full h-full object-cover rounded-full border-4 border-white shadow-md">
+                <label for="foto" class="absolute bottom-0 right-0 bg-gray-800 p-2 rounded-full text-white cursor-pointer hover:bg-gray-700 shadow-lg transition">
+                    <i data-lucide="camera" class="w-4 h-4 text-white"></i>
+                </label>
+            </div>
+            <h2 id="formTitle" class="text-xl font-black text-gray-800 uppercase italic">Nuevo Registro</h2>
+            <p id="formSubtitle" class="text-[10px] text-gray-500 font-bold uppercase tracking-widest">ID Automático</p>
+        </div>
+
+        <form id="userForm" action="/crear_usuario" method="post" enctype="multipart/form-data" class="p-6 space-y-4">
+            <input type="hidden" name="admin_operando" value="{{ doctor.username }}">
+            
+            <input type="hidden" name="usuario_id" id="usuario_id">
+            <input type="file" id="foto" name="foto" class="hidden" onchange="previewImage(event)">
+            
+            <div>
+                <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Nombre Completo</label>
+                <input type="text" name="nombre" id="form_nombre" required class="w-full bg-slate-50 border border-slate-200 p-2.5 rounded-lg text-sm outline-none focus:ring-2 focus:ring-gray-400">
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Especialidad</label>
+                    <input type="text" name="especialidad" id="form_especialidad" required class="w-full bg-slate-50 border border-slate-200 p-2.5 rounded-lg text-sm">
+                </div>
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Cédula</label>
+                    <input type="text" name="cedula" id="form_cedula" required class="w-full bg-slate-50 border border-slate-200 p-2.5 rounded-lg text-sm">
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Contraseña</label>
+                <input type="password" name="password" id="form_password" required class="w-full bg-slate-50 border border-slate-200 p-2.5 rounded-lg text-sm">
+                <p id="passHint" class="text-[9px] text-slate-400 mt-1 hidden italic">* Dejar vacío para mantener actual</p>
+            </div>
+
+            {% if doctor.nivel_acceso == 2 %}
+            <div class="p-4 bg-slate-50 rounded-xl border border-slate-100" id="contenedor_nivel">
+                <label class="block text-[10px] font-bold text-slate-400 uppercase mb-2 text-gray-700">Nivel de Privilegios</label>
+                <select name="nivel_acceso" id="form_nivel" required class="w-full bg-white border border-slate-200 p-2 rounded-lg text-xs font-bold text-slate-700">
+                    <option value="0">Doctor (Nivel 0)</option>
+                    <option value="1">Administrador (Nivel 1)</option>
+                    <option value="2">SuperAdmin (Nivel 2)</option>
+                </select>
+            </div>
+            {% else %}
+            <input type="hidden" name="nivel_acceso" id="form_nivel" value="0">
+            {% endif %}
+
+            <div class="space-y-2">
+                <button type="submit" id="submitBtn" class="w-full bg-gray-800 text-white font-bold py-3 rounded-xl hover:bg-gray-700 transition uppercase text-xs tracking-widest shadow-lg">
+                    Registrar Médico
+                </button>
+                <button type="button" id="cancelBtn" onclick="resetForm()" class="hidden w-full bg-slate-200 text-slate-600 font-bold py-2 rounded-xl uppercase text-[10px]">
+                    Cancelar Edición
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <div class="lg:col-span-8 bg-white rounded-3xl shadow-xl border border-slate-200 flex flex-col overflow-hidden">
+        <div class="p-6 border-b border-slate-100 bg-slate-50/50 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 w-full">
+            <div>
+                <h2 class="text-xl font-bold text-slate-800 uppercase tracking-tight">Médicos Registrados</h2>
+                <p class="text-xs text-slate-500 italic">Personal con acceso al sistema CancerPredic</p>
+            </div>
+            
+            <div class="relative group">
+                <span class="absolute inset-y-0 left-0 flex items-center pl-3">
+                    <i data-lucide="search" class="w-4 h-4 text-slate-400 group-focus-within:text-gray-600 transition-colors"></i>
+                </span>
+                <input type="text" id="searchInput" onkeyup="filterTable()" 
+                    placeholder="Buscar por nombre, ID o especialidad..." 
+                    class="pl-10 pr-4 py-2 bg-white border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-gray-400 outline-none w-full md:w-64 shadow-sm transition-all">
+            </div>
+        </div>
+
+        <div class="flex-1 overflow-y-auto overflow-x-auto custom-scrollbar p-4 md:p-6">
+            <table class="w-full text-left min-w-[600px]">
+                <thead>
+                    <tr class="text-[10px] font-bold text-slate-400 uppercase border-b border-slate-100">
+                        <th class="pb-4">Médico / ID</th>
+                        <th class="pb-4">Especialidad</th>
+                        <th class="pb-4">Rango</th>
+                        <th class="pb-4 text-center">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-50" id="userTableBody">
+                    {% for user in usuarios %}
+                    <tr class="user-row group hover:bg-gray-100/50 transition-colors {% if doctor.nivel_acceso >= user.nivel_acceso or doctor.username == user.username %}cursor-pointer{% else %}cursor-not-allowed opacity-75{% endif %}" 
+                        {% if doctor.nivel_acceso >= user.nivel_acceso or doctor.username == user.username %}onclick='prepareEdit({{ user | tojson }})'{% endif %}>
+                        
+                        <td class="py-4">
+                            <div class="flex items-center gap-3">
+                                <img src="/static/{{ user.foto_ruta }}" 
+                                    onerror="this.src='https://ui-avatars.com/api/?name={{ user.nombre_completo }}&background=f1f5f9&color=64748b'"
+                                    class="w-10 h-10 rounded-full object-cover border shadow-sm">
+                                <div>
+                                    <p class="text-sm font-bold text-slate-700">{{ user.nombre_completo }}</p>
+                                    <p class="text-[10px] font-mono text-gray-500 font-bold uppercase tracking-tighter">{{ user.username }}</p>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="py-4 text-xs font-bold text-slate-600">
+                            {{ user.especialidad }}
+                        </td>
+                        <td class="py-4">
+                            {% if user.nivel_acceso == 2 %}
+                            <span class="bg-gray-800 text-gray-100 px-2 py-0.5 rounded-full text-[9px] font-black uppercase">SuperAdmin</span>
+                            {% elif user.nivel_acceso == 1 %}
+                            <span class="bg-gray-600 text-gray-100 px-2 py-0.5 rounded-full text-[9px] font-black uppercase">Admin</span>
+                            {% else %}
+                            <span class="bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full text-[9px] font-black uppercase">Doctor</span>
+                            {% endif %}
+                        </td>
+                        <td class="py-4 text-center">
+                            <div class="flex items-center justify-center gap-2">
+                                
+                                {% if doctor.nivel_acceso >= user.nivel_acceso or doctor.username == user.username %}
+                                    <i data-lucide="pencil" class="w-4 h-4 text-gray-400 group-hover:text-gray-700 transition-colors"></i>
+                                {% else %}
+                                    <i data-lucide="lock" title="Sin permisos para editar" class="w-4 h-4 text-red-300"></i>
+                                {% endif %}
+
+                                {% if doctor.nivel_acceso > user.nivel_acceso and user.username != 'admin' %}
+                                <form action="/eliminar_usuario/{{ user.id }}" method="post" onsubmit="event.stopPropagation(); return confirm('¿Confirma la eliminación?')">
+                                    <input type="hidden" name="admin_operando" value="{{ doctor.username }}">
+                                    <button type="submit" class="text-slate-300 hover:text-red-600 transition p-1">
+                                        <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                    </button>
+                                </form>
+                                {% endif %}
+                                
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    // Buscador en tiempo real
+    function filterTable() {
+        const filter = document.getElementById("searchInput").value.toLowerCase();
+        const rows = document.getElementsByClassName("user-row");
+
+        Array.from(rows).forEach(row => {
+            const text = row.textContent.toLowerCase();
+            row.style.display = text.includes(filter) ? "" : "none";
+        });
+    }
+
+    function previewImage(event) {
+        const reader = new FileReader();
+        reader.onload = function() {
+            document.getElementById('preview').src = reader.result;
+        }
+        reader.readAsDataURL(event.target.files[0]);
+    }
+
+    function prepareEdit(user) {
+        const form = document.getElementById('userForm');
+        form.action = "/actualizar_usuario";
+        
+        document.getElementById('cancelBtn').classList.remove('hidden');
+        const submitBtn = document.getElementById('submitBtn');
+        submitBtn.innerText = "Actualizar Datos";
+        submitBtn.classList.replace('bg-gray-800', 'bg-gray-600');
+        
+        document.getElementById('formHeader').classList.replace('bg-gray-100', 'bg-gray-200');
+        document.getElementById('formTitle').innerText = "Modificar Perfil";
+        
+        document.getElementById('usuario_id').value = user.id;
+        document.getElementById('form_nombre').value = user.nombre_completo;
+        document.getElementById('form_especialidad').value = user.especialidad;
+        document.getElementById('form_cedula').value = user.cedula;
+        if(document.getElementById('form_nivel')) {
+            document.getElementById('form_nivel').value = user.nivel_acceso;
+        }
+
+        document.getElementById('form_password').required = false;
+        document.getElementById('form_password').placeholder = "Sin cambios";
+        document.getElementById('passHint').classList.remove('hidden');
+
+        document.getElementById('preview').src = "/static/" + user.foto_ruta;
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function resetForm() {
+        const form = document.getElementById('userForm');
+        form.reset();
+        form.action = "/crear_usuario";
+        document.getElementById('cancelBtn').classList.add('hidden');
+        const submitBtn = document.getElementById('submitBtn');
+        submitBtn.innerText = "Registrar Médico";
+        submitBtn.classList.replace('bg-gray-600', 'bg-gray-800');
+        document.getElementById('formHeader').classList.replace('bg-gray-200', 'bg-gray-100');
+        document.getElementById('formTitle').innerText = "Nuevo Registro";
+        document.getElementById('form_password').required = true;
+        document.getElementById('passHint').classList.add('hidden');
+        document.getElementById('preview').src = "https://ui-avatars.com/api/?name=Nuevo+Medico&background=1f2937&color=fff";
+    }
+</script>
+{% endblock %}

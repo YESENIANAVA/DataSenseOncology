@@ -1,0 +1,162 @@
+{% extends "base.html" %}
+
+{% block title %}Historial Clínico - {{ paciente.nombre_completo }}{% endblock %}
+
+{% block content %}
+<div class="max-w-[1200px] mx-auto space-y-6 md:space-y-8 p-2 md:p-0">
+
+    <div class="bg-gray-900 text-white p-6 rounded-3xl shadow-lg flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div class="flex items-center gap-4">
+            <div class="p-3 bg-gray-800 rounded-2xl">
+                <i data-lucide="file-text" class="w-6 h-6 text-gray-300"></i>
+            </div>
+            <div>
+                <h1 class="text-xl font-black uppercase italic tracking-tight">Expediente Clínico Digital</h1>
+                <p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Paciente: {{ paciente.nombre_completo }}</p>
+            </div>
+        </div>
+        <a href="/gestion_pacientes?user={{ doctor.username }}" class="bg-white/10 hover:bg-white/20 px-5 py-2.5 rounded-xl text-sm font-bold transition flex items-center gap-2 w-full md:w-auto justify-center">
+            <i data-lucide="arrow-left" class="w-4 h-4"></i> Volver al Listado
+        </a>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8">
+        
+        <div class="space-y-6">
+            <div class="bg-white p-6 rounded-3xl shadow-sm border border-gray-200">
+                <h3 class="text-gray-800 font-black text-xs uppercase mb-4 border-b pb-2">Datos del Paciente</h3>
+                <div class="space-y-3">
+                    <p class="text-sm"><strong>Edad:</strong> <span class="text-gray-600">{{ paciente.edad }} años</span></p>
+                    <p class="text-sm"><strong>Género:</strong> <span class="text-gray-600">{{ paciente.genero }}</span></p>
+                    <p class="text-sm flex items-center gap-2">
+                        <strong>Sangre:</strong> 
+                        <span class="bg-red-50 text-red-600 px-2 py-0.5 rounded-lg font-bold text-xs">{{ paciente.tipo_sangre }}</span>
+                    </p>
+                </div>
+            </div>
+            
+            <div class="bg-white p-6 rounded-3xl shadow-sm border border-gray-200">
+                <h3 class="text-gray-800 font-black text-xs uppercase mb-4 border-b pb-2">Antecedentes</h3>
+                <p class="text-xs text-gray-600 mb-3"><strong>Patológicos:</strong><br> {{ paciente.antecedentes_patologicos or 'Ninguno registrado' }}</p>
+                <p class="text-xs text-gray-600"><strong>Heredofamiliares:</strong><br> {{ paciente.antecedentes_heredofamiliares or 'Ninguno registrado' }}</p>
+            </div>
+        </div>
+
+        <div class="lg:col-span-2 space-y-6">
+            
+            <div class="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-gray-200">
+                <h3 class="text-gray-800 font-black text-lg uppercase italic mb-6">Registro Oncológico</h3>
+                
+                {% if tumores %}
+                    {% for tumor in tumores %}
+                    <div class="bg-gray-50 p-5 rounded-2xl border mb-4 flex flex-col md:flex-row justify-between md:items-center gap-4 hover:border-gray-300 transition-colors">
+                        <div>
+                            <p class="text-sm font-bold text-gray-800">{{ tumor.tipo_tumor }} - {{ tumor.ubicacion }}</p>
+                            <p class="text-[10px] font-bold text-red-500 uppercase tracking-widest mt-1">Etapa Clínica: {{ tumor.etapa }}</p>
+                        </div>
+                        <div class="md:text-right bg-white p-3 rounded-xl border border-gray-100 shadow-sm">
+                            <p class="text-[10px] font-black text-gray-500 uppercase">Dimensión (L x A):</p>
+                            <p class="text-lg font-black text-gray-800 leading-none mt-1">{{ tumor.dimension_largo }} x {{ tumor.dimension_ancho }} <span class="text-[10px] text-gray-400">mm</span></p>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="text-center py-8 bg-gray-50 rounded-2xl border border-dashed border-gray-300">
+                        <i data-lucide="file-question" class="w-10 h-10 text-gray-300 mx-auto mb-2"></i>
+                        <p class="text-sm text-gray-500 font-medium">No hay registros oncológicos previos.</p>
+                    </div>
+                {% endif %}
+            </div>
+
+            <div class="bg-gradient-to-br from-gray-800 to-gray-900 p-6 md:p-8 rounded-3xl shadow-2xl text-white overflow-hidden relative">
+                <div class="absolute top-0 right-0 -mt-4 -mr-4 w-32 h-32 bg-white opacity-5 rounded-full blur-2xl"></div>
+                
+                <div class="flex justify-between items-center mb-6 relative z-10">
+                    <h3 class="font-black uppercase italic tracking-widest text-sm text-gray-100">Predicción de Crecimiento IA</h3>
+                    <i data-lucide="cpu" id="cpu-icon" class="text-gray-400"></i>
+                </div>
+                
+                <div id="ia-container" class="bg-white/10 p-6 md:p-8 rounded-2xl backdrop-blur-md border border-white/10 text-center relative z-10">
+                    
+                    <div id="ia-initial">
+                        <p class="text-sm mb-6 opacity-90 font-medium text-gray-200">Cálculo de volumen y proyección teórica a 30 días.</p>
+                        <button onclick="ejecutarIA({{ paciente.id }})" class="bg-white text-gray-900 font-black px-8 py-3.5 rounded-xl hover:bg-gray-200 hover:scale-105 active:scale-95 transition-all uppercase text-xs tracking-tighter shadow-xl">
+                            <i data-lucide="play" class="inline w-4 h-4 mr-1 -mt-0.5"></i> Calcular Predicción
+                        </button>
+                    </div>
+
+                    <div id="ia-loader" class="hidden py-8">
+                        <div class="w-12 h-12 border-4 border-gray-500 border-t-white rounded-full animate-spin mx-auto mb-4"></div>
+                        <p class="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-300 animate-pulse">Procesando dimensiones...</p>
+                    </div>
+
+                    <div id="ia-results" class="hidden space-y-6">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="bg-black/30 p-5 rounded-xl border border-white/5">
+                                <p class="text-[10px] uppercase font-bold text-gray-400 mb-1">Volumen Actual</p>
+                                <p id="vol-actual" class="text-2xl font-black italic text-gray-100">0.00 <span class="text-sm font-normal text-gray-500">mm³</span></p>
+                            </div>
+                            <div class="bg-black/30 p-5 rounded-xl border border-white/5">
+                                <p class="text-[10px] uppercase font-bold text-gray-400 mb-1">Proyección (30d)</p>
+                                <p id="vol-predicho" class="text-2xl font-black italic text-gray-200">0.00 <span class="text-sm font-normal text-gray-500">mm³</span></p>
+                            </div>
+                        </div>
+                        <div class="text-center p-5 bg-black/30 rounded-xl border border-white/5">
+                            <p class="text-[10px] uppercase font-bold text-gray-400 mb-1">Crecimiento Teórico</p>
+                            <p id="pct-incremento" class="text-5xl font-black text-emerald-400 drop-shadow-lg">+0.00%</p>
+                        </div>
+                        <button onclick="window.location.reload()" class="mt-4 text-[10px] uppercase font-bold text-gray-400 hover:text-white transition italic underline decoration-gray-600 underline-offset-4">
+                            Reiniciar Análisis
+                        </button>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    async function ejecutarIA(pacienteId) {
+        document.getElementById('ia-initial').classList.add('hidden');
+        document.getElementById('ia-loader').classList.remove('hidden');
+        document.getElementById('cpu-icon').classList.add('animate-spin');
+
+        try {
+            const response = await fetch(`/ejecutar_ia/${pacienteId}`);
+            const data = await response.json();
+
+            if (data.error) {
+                alert("Error: " + data.error);
+                location.reload();
+                return;
+            }
+
+            setTimeout(() => {
+                document.getElementById('ia-loader').classList.add('hidden');
+                document.getElementById('ia-results').classList.remove('hidden');
+                document.getElementById('cpu-icon').classList.remove('animate-spin');
+
+                // Damos color rojo si el incremento es peligroso, o verde/blanco si es normal
+                const pctElement = document.getElementById('pct-incremento');
+                pctElement.innerText = `+${data.incremento_porcentaje}%`;
+                
+                if(parseFloat(data.incremento_porcentaje) > 20) {
+                    pctElement.classList.replace('text-emerald-400', 'text-red-400');
+                }
+
+                document.getElementById('vol-actual').innerHTML = `${data.volumen_actual} <span class="text-sm font-normal text-gray-500">mm³</span>`;
+                document.getElementById('vol-predicho').innerHTML = `${data.volumen_predicho} <span class="text-sm font-normal text-gray-500">mm³</span>`;
+                
+            }, 1000);
+
+        } catch (error) {
+            console.error("Error:", error);
+            alert("Hubo un problema al conectar con el servidor.");
+            location.reload();
+        }
+    }
+</script>
+{% endblock %}

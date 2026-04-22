@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DataSense Oncology - Gestión de Pacientes</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen font-sans">
+
+    <header class="bg-gray-900 text-white p-4 shadow-lg flex justify-between items-center px-8">
+        <div class="flex items-center gap-3">
+            <i data-lucide="users" class="text-gray-400"></i>
+            <h1 class="font-bold text-lg tracking-widest uppercase">Gestión de Pacientes</h1>
+        </div>
+        <a href="/dashboard?user={{ doctor.username }}" class="bg-gray-800 hover:bg-gray-700 px-4 py-2 rounded-lg text-sm font-bold transition flex items-center gap-2 text-white">
+            <i data-lucide="arrow-left" class="w-4 h-4 text-white"></i> Volver al Panel
+        </a>
+    </header>
+
+    <main class="p-6 max-w-[1400px] mx-auto grid grid-cols-1 lg:grid-cols-12 gap-6">
+        
+        <div class="lg:col-span-5 bg-white rounded-3xl shadow-xl border border-gray-200 overflow-hidden h-fit">
+            <div class="bg-gray-50 p-6 border-b border-gray-200 flex items-center gap-4">
+                <div class="p-3 bg-gray-800 rounded-2xl text-white">
+                    <i data-lucide="user-plus" class="w-6 h-6"></i>
+                </div>
+                <div>
+                    <h2 class="text-lg font-black text-gray-800 uppercase italic">Alta de Paciente</h2>
+                    <p class="text-[10px] text-gray-500 font-bold uppercase tracking-widest">Nueva Ficha Clínica</p>
+                </div>
+            </div>
+
+            <form action="/guardar_paciente" method="post" class="p-6 space-y-6">
+                <div class="space-y-3">
+                    <h3 class="text-[10px] font-bold text-gray-400 uppercase tracking-widest border-b pb-1">Datos Personales</h3>
+                    <input type="text" name="nombre_completo" placeholder="Nombre Completo" required class="w-full bg-gray-50 border border-gray-200 p-3 rounded-xl text-sm outline-none focus:ring-2 focus:ring-gray-400 transition-all">
+                    
+                    <div class="grid grid-cols-3 gap-3">
+                        <input type="number" name="edad" placeholder="Edad" required class="bg-gray-50 border border-gray-200 p-3 rounded-xl text-sm outline-none focus:ring-2 focus:ring-gray-400">
+                        <select name="genero" required class="bg-gray-50 border border-gray-200 p-3 rounded-xl text-sm text-gray-500">
+                            <option value="">Género</option>
+                            <option value="Masculino">Masculino</option>
+                            <option value="Femenino">Femenino</option>
+                            <option value="Otro">Otro</option>
+                        </select>
+                        <select name="tipo_sangre" required class="bg-gray-50 border border-gray-200 p-3 rounded-xl text-sm text-gray-500">
+                            <option value="">Tipo Sangre</option>
+                            <option value="A+">A+</option><option value="A-">A-</option>
+                            <option value="B+">B+</option><option value="B-">B-</option>
+                            <option value="O+">O+</option><option value="O-">O-</option>
+                            <option value="AB+">AB+</option><option value="AB-">AB-</option>
+                        </select>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3">
+                        <input type="text" name="estado_civil" placeholder="Estado Civil" class="bg-gray-50 border border-gray-200 p-3 rounded-xl text-sm">
+                        <input type="text" name="religion" placeholder="Religión" class="bg-gray-50 border border-gray-200 p-3 rounded-xl text-sm">
+                    </div>
+
+                    <input type="text" name="direccion" placeholder="Dirección Completa" class="w-full bg-gray-50 border border-gray-200 p-3 rounded-xl text-sm">
+                    <input type="tel" name="telefono" placeholder="Teléfono de Contacto" class="w-full bg-gray-50 border border-gray-200 p-3 rounded-xl text-sm">
+                </div>
+
+                <div class="space-y-3">
+                    <h3 class="text-[10px] font-bold text-gray-400 uppercase tracking-widest border-b pb-1">Historia Clínica</h3>
+                    <textarea name="antecedentes_patologicos" placeholder="Antecedentes Patológicos (Cirugías, accidentes...)" class="w-full bg-gray-50 border border-gray-200 p-3 rounded-xl text-sm h-20 outline-none focus:ring-2 focus:ring-gray-400"></textarea>
+                    <textarea name="antecedentes_heredofamiliares" placeholder="Antecedentes Heredofamiliares (Cáncer en la familia...)" class="w-full bg-gray-50 border border-gray-200 p-3 rounded-xl text-sm h-20 outline-none focus:ring-2 focus:ring-gray-400"></textarea>
+                    <input type="text" name="enfermedad_cronica" placeholder="Enfermedades Crónicas (Diabetes, Hipertensión...)" class="w-full bg-gray-50 border border-gray-200 p-3 rounded-xl text-sm">
+                </div>
+
+                <input type="hidden" name="medico_asignado" value="{{ doctor.username }}">
+
+                <button type="submit" class="w-full bg-gray-800 text-white font-bold py-4 rounded-2xl hover:bg-gray-700 transition shadow-lg uppercase text-xs tracking-widest">
+                    Guardar Registro Clínico
+                </button>
+            </form>
+        </div>
+
+        <div class="lg:col-span-7 bg-white rounded-3xl shadow-xl border border-gray-200 flex flex-col overflow-hidden">
+            <div class="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+                <h2 class="text-xl font-bold text-gray-800 uppercase tracking-tight">Pacientes en Sistema</h2>
+                <div class="relative">
+                    <span class="absolute inset-y-0 left-0 flex items-center pl-3">
+                        <i data-lucide="search" class="w-4 h-4 text-gray-400"></i>
+                    </span>
+                    <input type="text" id="patientSearch" onkeyup="filterPatients()" placeholder="Buscar paciente..." class="pl-10 pr-4 py-2 bg-white border border-gray-200 rounded-xl text-xs outline-none focus:ring-2 focus:ring-gray-400 w-64">
+                </div>
+            </div>
+
+            <div class="flex-1 overflow-y-auto custom-scrollbar p-6">
+                <table class="w-full text-left">
+                    <thead>
+                        <tr class="text-[10px] font-bold text-gray-400 uppercase border-b border-gray-100">
+                            <th class="pb-4">Paciente</th>
+                            <th class="pb-4">Edad/Sexo</th>
+                            <th class="pb-4">Sangre</th>
+                            <th class="pb-4 text-center">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="patientTableBody" class="divide-y divide-gray-50">
+                        {% for paciente in pacientes %}
+                        <tr class="patient-row group hover:bg-gray-100/50 transition-colors">
+                            <td class="py-4 font-bold text-gray-700 text-sm">{{ paciente.nombre_completo }}</td>
+                            <td class="py-4 text-xs text-gray-500">{{ paciente.edad }} años / {{ paciente.genero }}</td>
+                            <td class="py-4">
+                                <span class="bg-red-50 text-red-600 px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-tighter">{{ paciente.tipo_sangre }}</span>
+                            </td>
+                            <td class="py-4 text-center">
+                                <a href="/historial/{{ paciente.id }}?user={{ doctor.username }}" 
+                                    class="text-gray-400 hover:text-gray-700 transition p-1 inline-block">
+                                        <i data-lucide="eye" class="w-5 h-5"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        lucide.createIcons();
+        function filterPatients() {
+            const filter = document.getElementById("patientSearch").value.toLowerCase();
+            const rows = document.getElementsByClassName("patient-row");
+            Array.from(rows).forEach(row => {
+                const text = row.textContent.toLowerCase();
+                row.style.display = text.includes(filter) ? "" : "none";
+            });
+        }
+    </script>
+</body>
+</html>

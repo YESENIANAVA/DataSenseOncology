@@ -1,0 +1,169 @@
+import numpy as np
+from sklearn.linear_model import LinearRegression
+from datetime import datetime
+import math
+
+def calcular_volumen(largo, ancho, profundidad):
+    # Usamos la fórmula del elipsoide: (pi/6) * L * A * P
+    return (math.pi / 6) * largo * ancho * profundidad
+
+def predecir_crecimiento_ia(largo, ancho, profundidad, dias=30):
+    # 1. Calculamos el volumen actual
+    v_actual = calcular_volumen(largo, ancho, profundidad)
+    
+    # 2. Tasa de crecimiento promedio (parámetro clínico base)
+    # En una fase avanzada, aquí usarás el modelo .predict() de scikit-learn
+    tasa_diaria = 0.005  # Ejemplo: 0.5% de crecimiento diario
+    
+    # 3. Proyección exponencial: V = V0 * e^(kt)
+    v_predicho = v_actual * math.exp(tasa_diaria * dias)
+    
+    # 4. Cálculo de porcentaje de incremento
+    incremento_pct = ((v_predicho - v_actual) / v_actual) * 100
+    
+    return {
+        "volumen_actual": round(v_actual, 2),
+        "volumen_predicho": round(v_predicho, 2),
+        "incremento_porcentaje": round(incremento_pct, 2),
+        "dias_proyectados": dias
+    }
+    
+
+def calcular_crecimiento_real(historial):
+    historial_ordenado = sorted(historial, key=lambda x: datetime.strptime(x['fecha'], '%Y-%m-%d'))
+    
+    # Validaciones básicas
+    if len(historial_ordenado) < 2: return {"error": "Insuficientes datos."}
+    
+    p_inicial = historial_ordenado[0]
+    p_final = historial_ordenado[-1]
+    dias_totales = (datetime.strptime(p_final['fecha'], '%Y-%m-%d') - datetime.strptime(p_inicial['fecha'], '%Y-%m-%d')).days
+    
+    if dias_totales <= 0: return {"error": "Fechas inválidas."}
+    
+    v_final = float(p_final['volumen'])
+    v_inicial = float(p_inicial['volumen'])
+    
+    # 1. Tasa Global (para la proyección a futuro)
+    tasa_diaria_global = math.log(v_final / v_inicial) / dias_totales if v_inicial > 0 else 0
+    tasa_porcentual = (math.exp(tasa_diaria_global) - 1) * 100 
+    
+    # 2. Análisis Dinámico de Tratamiento (NUEVO)
+    estado_clinico = "Observación Inicial"
+    color_alerta = "text-yellow-400"
+    
+    # Revisamos el ÚLTIMO periodo (entre el penúltimo y el último registro)
+    if len(historial_ordenado) >= 2:
+        penultimo = historial_ordenado[-2]
+        ultimo = historial_ordenado[-1]
+        
+        hubo_crecimiento = float(ultimo['volumen']) > float(penultimo['volumen'])
+        estaba_en_tratamiento = ultimo.get('tratamiento', False) or penultimo.get('tratamiento', False)
+        
+        if estaba_en_tratamiento and not hubo_crecimiento:
+            estado_clinico = "Respuesta Positiva al Tratamiento"
+            color_alerta = "text-green-400"
+        elif estaba_en_tratamiento and hubo_crecimiento:
+            estado_clinico = "⚠️ ALERTA: Resistencia / Rebrote"
+            color_alerta = "text-red-500"
+        elif not estaba_en_tratamiento and hubo_crecimiento:
+            estado_clinico = "Crecimiento Activo (Sin Tratamiento)"
+            color_alerta = "text-orange-400"
+        elif not estaba_en_tratamiento and not hubo_crecimiento:
+            estado_clinico = "Remisión / Estable"
+            color_alerta = "text-blue-400"
+
+    # 3. Proyecciones
+    pred_30 = v_final * math.exp(tasa_diaria_global * 30)
+    pred_60 = v_final * math.exp(tasa_diaria_global * 60)
+    pred_90 = v_final * math.exp(tasa_diaria_global * 90)
+    
+    return {
+        "dias_analizados": dias_totales,
+        "tasa_diaria_porcentaje": round(tasa_porcentual, 4),
+        "volumen_actual": round(v_final, 2),
+        "prediccion_30_dias": round(pred_30, 2),
+        "prediccion_60_dias": round(pred_60, 2),
+        "prediccion_90_dias": round(pred_90, 2),
+        "tendencia": estado_clinico,
+        "color_tendencia": color_alerta # Enviamos el color al HTML
+    }
+
+def evaluar_riesgo_clinico(datos):
+    """
+    Evalúa el perfil molecular y anatómico para calcular el riesgo de recaída
+    y la agresividad del tumor usando heurísticas oncológicas (Nottingham + Subtipos).
+    """
+    # 1. Extracción de variables
+    re = datos['re']
+    rp = datos['rp']
+    her2 = datos['her2']
+    ki67 = datos['ki67']
+    grado = datos['grado']
+    tamano_cm = datos['tamano'] / 10.0  # El NPI usa centímetros
+    ganglios_pos = datos['ganglios_pos']
+    ilv = datos['ilv']
+    margenes = datos['margenes']
+
+    # 2. Clasificación del Subtipo Molecular (Luminal, HER2, Triple Negativo)
+    subtipo = "Indeterminado"
+    if re == 1 or rp == 1:
+        if her2 == 1:
+            subtipo = "Luminal B (HER2 Positivo)"
+        else:
+            if ki67 < 20 and grado <= 2:
+                subtipo = "Luminal A (Bajo Riesgo)"
+            else:
+                subtipo = "Luminal B (Alto Riesgo)"
+    elif re == 0 and rp == 0:
+        if her2 == 1:
+            subtipo = "Enriquecido con HER2"
+        else:
+            subtipo = "Triple Negativo (Basal-like)"
+
+    # 3. Índice de Pronóstico de Nottingham (NPI modificado)
+    # Fórmula: (Tamaño en cm x 0.2) + Grado (1-3) + Nódulo (1-3)
+    puntuacion_nodulo = 1
+    if 1 <= ganglios_pos <= 3:
+        puntuacion_nodulo = 2
+    elif ganglios_pos >= 4:
+        puntuacion_nodulo = 3
+        
+    npi = (tamano_cm * 0.2) + grado + puntuacion_nodulo
+    
+    # Penalizaciones adicionales por comportamiento invasivo
+    if ilv == 1: npi += 0.5
+    if margenes == 1: npi += 1.0
+
+    # 4. Cálculo del Riesgo y Recomendación
+    probabilidad_recaida = 0
+    nivel_riesgo = ""
+    recomendacion = ""
+
+    if npi <= 3.4 and subtipo == "Luminal A (Bajo Riesgo)":
+        nivel_riesgo = "Bajo"
+        probabilidad_recaida = round(npi * 4, 1) # Aprox 10-15%
+        recomendacion = "Pronóstico excelente. Sugerencia: Cirugía conservadora + Hormonoterapia adyuvante. Quimioterapia no estrictamente necesaria."
+    
+    elif 3.4 < npi <= 5.4 or subtipo == "Luminal B (Alto Riesgo)":
+        nivel_riesgo = "Moderado"
+        probabilidad_recaida = round(npi * 8, 1) # Aprox 30-45%
+        recomendacion = "Riesgo intermedio. Sugerencia: Evaluar firma genómica (Oncotype DX). Posible esquema de Quimioterapia + Hormonoterapia."
+    
+    else: # npi > 5.4 o subtipos agresivos
+        nivel_riesgo = "Alto"
+        probabilidad_recaida = round(min(npi * 12, 95.0), 1) # Aprox 60-90%
+        recomendacion = "Alta agresividad biológica. Sugerencia: Quimioterapia Neoadyuvante agresiva urgente. Protocolo estricto de vigilancia sistémica."
+
+    if subtipo == "Triple Negativo (Basal-like)":
+        nivel_riesgo = "Alto"
+        probabilidad_recaida = max(probabilidad_recaida, 75.0)
+        recomendacion = "Alerta: Perfil Triple Negativo. Alto riesgo de metástasis temprana. Iniciar Quimioterapia Neoadyuvante de forma inmediata."
+
+    return {
+        "nivel_riesgo": nivel_riesgo,
+        "probabilidad_recaida": probabilidad_recaida,
+        "perfil_agresividad": subtipo,
+        "recomendacion_terapeutica": recomendacion,
+        "npi_score": round(npi, 2)
+    }

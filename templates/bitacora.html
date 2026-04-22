@@ -1,0 +1,159 @@
+{% extends "base.html" %}
+
+{% block title %}Bitácora de Actividad - DataSense{% endblock %}
+
+{% block content %}
+<div class="max-w-[1400px] mx-auto p-2 md:p-0 space-y-6 md:space-y-8">
+
+    <div class="bg-gray-900 text-white p-6 rounded-3xl shadow-lg flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div class="flex items-center gap-4">
+            <div class="p-3 bg-gray-800 rounded-2xl border border-gray-700">
+                <i data-lucide="scroll-text" class="w-6 h-6 text-gray-300"></i>
+            </div>
+            <div>
+                <h1 class="text-xl font-black uppercase italic tracking-tight">Historial del Sistema</h1>
+                <p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Auditoría y Registro de Movimientos</p>
+            </div>
+        </div>
+        <a href="/dashboard?user={{ doctor.username }}" class="bg-white/10 hover:bg-white/20 px-5 py-2.5 rounded-xl text-sm font-bold transition flex items-center gap-2 w-full md:w-auto justify-center">
+            <i data-lucide="arrow-left" class="w-4 h-4"></i> Volver al Panel
+        </a>
+    </div>
+
+    <div class="bg-white rounded-3xl shadow-xl border border-gray-200 overflow-hidden">
+        
+        <div class="p-4 md:p-6 border-b border-gray-100 bg-gray-50/50">
+            <div class="flex flex-col xl:flex-row gap-4 md:gap-6 justify-between md:items-end">
+                
+                <div class="w-full xl:w-1/3">
+                    <label class="block text-[10px] font-bold text-gray-400 uppercase mb-2 ml-1">Buscar Evento</label>
+                    <div class="relative group">
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-3">
+                            <i data-lucide="search" class="w-4 h-4 text-gray-400 group-focus-within:text-gray-800 transition-colors"></i>
+                        </span>
+                        <input type="text" id="textSearch" onkeyup="aplicarFiltros()" 
+                            placeholder="Médico, acción o detalle..." 
+                        class="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-gray-400 outline-none shadow-sm transition-all">
+                    </div>
+                </div>
+
+                <div class="w-full xl:w-auto flex flex-col sm:flex-row gap-4">
+                    <div class="w-full sm:w-auto">
+                        <label class="block text-[10px] font-bold text-gray-400 uppercase mb-2 ml-1">Fecha Inicial</label>
+                        <input type="date" id="dateStart" onchange="aplicarFiltros()" 
+                            class="w-full sm:w-auto px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-gray-400 outline-none shadow-sm text-gray-600 transition-all">
+                    </div>
+                    <div class="w-full sm:w-auto">
+                        <label class="block text-[10px] font-bold text-gray-400 uppercase mb-2 ml-1">Fecha Final</label>
+                        <input type="date" id="dateEnd" onchange="aplicarFiltros()" 
+                            class="w-full sm:w-auto px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-gray-400 outline-none shadow-sm text-gray-600 transition-all">
+                    </div>
+                    <button onclick="limpiarFiltros()" class="self-end w-full sm:w-auto px-5 py-2.5 bg-gray-200 text-gray-600 rounded-xl text-xs font-bold hover:bg-gray-300 transition-colors">
+                        Limpiar Filtros
+                    </button>
+                </div>
+
+            </div>
+        </div>
+
+        <div class="overflow-x-auto custom-scrollbar">
+            <table class="w-full text-left border-collapse min-w-[800px]" id="logTable">
+                <thead>
+                    <tr class="bg-gray-50 text-[10px] font-bold text-gray-400 uppercase tracking-widest border-b border-gray-100">
+                        <th class="p-4 md:p-6 whitespace-nowrap">Fecha y Hora</th>
+                        <th class="p-4 md:p-6">Usuario</th>
+                        <th class="p-4 md:p-6">Acción</th>
+                        <th class="p-4 md:p-6 w-1/3">Detalle del Movimiento</th>
+                        <th class="p-4 md:p-6 text-center">Estado</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-50">
+                    {% for log in logs %}
+                    <tr class="log-row hover:bg-gray-50/50 transition-colors">
+                        <td class="p-4 md:p-6 text-xs font-mono text-gray-500 log-date whitespace-nowrap">
+                            <span class="bg-gray-100 px-2 py-1 rounded">{{ log.fecha }}</span>
+                        </td>
+                        
+                        <td class="p-4 md:p-6">
+                            <div class="flex items-center gap-3">
+                                <div class="w-8 h-8 bg-gray-800 text-white rounded-full flex items-center justify-center text-[10px] font-bold uppercase shadow-sm shrink-0">
+                                    {{ log.usuario[:2] }}
+                                </div>
+                                <span class="text-sm font-bold text-gray-700 whitespace-nowrap">{{ log.usuario }}</span>
+                            </div>
+                        </td>
+                        
+                        <td class="p-4 md:p-6">
+                            <span class="px-2.5 py-1 bg-gray-200 text-gray-800 rounded-md text-[10px] font-black uppercase tracking-tighter whitespace-nowrap">
+                                {{ log.accion.split('|')[0] if '|' in log.accion else log.accion }}
+                            </span>
+                        </td>
+
+                        <td class="p-4 md:p-6 text-xs text-gray-600 italic">
+                            {{ log.accion.split('|')[1] if '|' in log.accion else "Sin detalle operativo" }}
+                        </td>
+
+                        <td class="p-4 md:p-6 text-center">
+                            <span class="inline-flex items-center justify-center bg-green-50 text-green-500 w-8 h-8 rounded-full" title="Operación Exitosa">
+                                <i data-lucide="check" class="w-4 h-4"></i>
+                            </span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <div id="noResults" class="hidden py-20 px-4 text-center">
+            <i data-lucide="search-x" class="w-12 h-12 text-gray-300 mx-auto mb-4"></i>
+            <h3 class="text-lg font-bold text-gray-400">Sin resultados</h3>
+            <p class="text-sm text-gray-400 font-medium mt-1">No se encontraron registros que coincidan con los filtros aplicados.</p>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    function aplicarFiltros() {
+        const textFilter = document.getElementById("textSearch").value.toLowerCase();
+        const dateStart = document.getElementById("dateStart").value;
+        const dateEnd = document.getElementById("dateEnd").value;
+        const rows = document.getElementsByClassName("log-row");
+        let countVisible = 0;
+
+        Array.from(rows).forEach(row => {
+            const text = row.textContent.toLowerCase();
+            const rowDateFull = row.querySelector(".log-date").innerText.trim(); // Se asegura de no traer espacios extra
+            const rowDate = rowDateFull.split(" ")[0]; // Extrae solo el fragmento "YYYY-MM-DD"
+
+            // Lógica de validación
+            const matchesText = text.includes(textFilter);
+            const matchesStart = !dateStart || rowDate >= dateStart;
+            const matchesEnd = !dateEnd || rowDate <= dateEnd;
+
+            if (matchesText && matchesStart && matchesEnd) {
+                row.style.display = "";
+                countVisible++;
+            } else {
+                row.style.display = "none";
+            }
+        });
+
+        document.getElementById("noResults").classList.toggle("hidden", countVisible > 0);
+        
+        // Escondemos la cabecera de la tabla si no hay resultados para que se vea más limpio
+        const tableHeader = document.querySelector("#logTable thead");
+        if(tableHeader) {
+            tableHeader.style.display = countVisible > 0 ? "" : "none";
+        }
+    }
+
+    function limpiarFiltros() {
+        document.getElementById("textSearch").value = "";
+        document.getElementById("dateStart").value = "";
+        document.getElementById("dateEnd").value = "";
+        aplicarFiltros();
+    }
+</script>
+{% endblock %}

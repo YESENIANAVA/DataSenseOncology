@@ -1,0 +1,251 @@
+{% extends "base.html" %}
+
+{% block title %}Motor Predictivo - DataSense{% endblock %}
+
+{% block content %}
+<div class="max-w-[1000px] mx-auto p-2 md:p-0 space-y-6 md:space-y-8">
+
+    <div class="bg-gray-900 text-white p-6 rounded-3xl shadow-lg flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div class="flex items-center gap-4">
+            <div class="p-3 bg-pink-500/20 rounded-2xl border border-pink-500/30">
+                <i data-lucide="dna" class="w-6 h-6 text-pink-500"></i>
+            </div>
+            <div>
+                <h1 class="text-xl font-black uppercase italic tracking-tight">Motor Predictivo Clínico</h1>
+                <p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">IA conectada al Expediente</p>
+            </div>
+        </div>
+        <a href="/dashboard?user={{ doctor.username }}" class="bg-white/10 hover:bg-white/20 px-5 py-2.5 rounded-xl text-sm font-bold transition flex items-center gap-2 w-full md:w-auto justify-center">
+            <i data-lucide="arrow-left" class="w-4 h-4"></i> Volver al Panel
+        </a>
+    </div>
+
+    <div class="bg-white p-6 md:p-8 rounded-3xl shadow-xl border border-gray-200">
+        <h2 class="text-pink-800 font-black uppercase italic mb-4 border-b border-gray-100 pb-2">1. Seleccionar Paciente a Evaluar</h2>
+        
+        <div class="relative w-full md:w-2/3">
+            <div class="relative group">
+                <i data-lucide="search" class="absolute left-3 top-3.5 w-5 h-5 text-gray-400 group-focus-within:text-pink-500 transition-colors"></i>
+                <input type="text" id="buscadorPaciente" onkeyup="filtrarPacientes()" placeholder="Buscar paciente en la base de datos..." autocomplete="off"
+                    class="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-pink-500 outline-none transition shadow-sm">
+            </div>
+            <ul id="listaResultados" class="absolute z-20 w-full bg-white border border-gray-200 rounded-xl mt-1 shadow-2xl hidden max-h-48 overflow-y-auto"></ul>
+        </div>
+
+        <div id="pacienteSeleccionado" class="hidden mt-6 bg-pink-50 border border-pink-200 p-4 rounded-xl flex items-center justify-between shadow-sm">
+            <div>
+                <p class="text-[10px] font-bold text-pink-600 uppercase tracking-widest">Paciente Vinculado</p>
+                <p id="nombrePacienteLabel" class="text-lg md:text-xl font-black text-pink-900 leading-tight"></p>
+                <input type="hidden" id="pacienteIdSecreto" name="paciente_id">
+            </div>
+            <button onclick="limpiarPaciente()" class="text-gray-400 hover:text-red-500 transition p-2 bg-white rounded-full shadow-sm">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+        </div>
+    </div>
+
+    <div id="seccionDatos" class="bg-white p-6 md:p-8 rounded-3xl shadow-xl border border-gray-200 opacity-50 pointer-events-none transition-opacity duration-300">
+        <div class="text-center py-6">
+            <div class="inline-block p-4 bg-gray-50 rounded-full mb-4 border border-gray-200">
+                <i data-lucide="database-zap" class="w-10 h-10 text-pink-600"></i>
+            </div>
+            <h2 class="text-xl font-black text-gray-900 uppercase italic">Extracción de Datos Automática</h2>
+            <p class="text-sm text-gray-500 mt-2 max-w-lg mx-auto">
+                El motor predictivo extraerá automáticamente el <b>Perfil Molecular (Fase 2)</b> del paciente directamente desde su expediente clínico para calcular el pronóstico.
+            </p>
+
+            <button onclick="procesarPrediccion()" id="btnCalcular" class="mt-8 bg-pink-700 hover:bg-pink-800 text-white font-black py-4 px-8 rounded-xl shadow-lg transition-all uppercase tracking-widest text-sm inline-flex items-center gap-2 active:scale-[0.99]">
+                <i data-lucide="cpu" class="w-5 h-5"></i> Ejecutar Análisis Predictivo
+            </button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    const pacientesDB = [
+        {% for p in pacientes %}
+        { id: {{ p.id }}, nombre: "{{ p.nombre_completo }}" },
+        {% endfor %}
+    ];
+
+    function filtrarPacientes() {
+        const input = document.getElementById('buscadorPaciente').value.toLowerCase();
+        const lista = document.getElementById('listaResultados');
+        lista.innerHTML = ''; 
+
+        if (input.length < 1) {
+            lista.classList.add('hidden');
+            return;
+        }
+
+        const filtrados = pacientesDB.filter(p => p.nombre.toLowerCase().includes(input) || p.id.toString().includes(input));
+
+        if (filtrados.length > 0) {
+            lista.classList.remove('hidden');
+            filtrados.forEach(p => {
+                const li = document.createElement('li');
+                li.className = "p-3 hover:bg-pink-50 cursor-pointer border-b border-gray-100 text-sm text-gray-700 flex justify-between items-center";
+                li.innerHTML = `<span><i data-lucide="user" class="inline w-4 h-4 mr-2 text-gray-400"></i>${p.nombre}</span> <span class="text-[10px] font-bold bg-pink-100 text-pink-700 px-2 py-0.5 rounded">ID: ${p.id}</span>`;
+                li.onclick = () => seleccionarPaciente(p.id, p.nombre);
+                lista.appendChild(li);
+            });
+            lucide.createIcons();
+        } else {
+            lista.classList.remove('hidden');
+            lista.innerHTML = `<li class="p-4 text-sm text-gray-400 italic text-center">No se encontraron pacientes.</li>`;
+        }
+    }
+
+    function seleccionarPaciente(id, nombre) {
+        document.getElementById('buscadorPaciente').value = '';
+        document.getElementById('listaResultados').classList.add('hidden');
+        document.getElementById('pacienteSeleccionado').classList.remove('hidden');
+        document.getElementById('nombrePacienteLabel').innerText = nombre;
+        document.getElementById('pacienteIdSecreto').value = id;
+        document.getElementById('seccionDatos').classList.remove('opacity-50', 'pointer-events-none');
+    }
+
+    function limpiarPaciente() {
+        document.getElementById('pacienteSeleccionado').classList.add('hidden');
+        document.getElementById('pacienteIdSecreto').value = '';
+        document.getElementById('seccionDatos').classList.add('opacity-50', 'pointer-events-none');
+        const panel = document.getElementById('panelResultados');
+        if(panel) panel.remove();
+    }
+
+    async function procesarPrediccion() {
+        const btn = document.getElementById('btnCalcular');
+        const originalText = btn.innerHTML;
+        btn.innerHTML = `<i data-lucide="loader-2" class="w-5 h-5 animate-spin"></i> Conectando con BD...`;
+        btn.disabled = true;
+
+        const pacienteId = document.getElementById('pacienteIdSecreto').value;
+
+        try {
+            // AHORA SOLO ENVIAMOS EL ID DEL PACIENTE
+            const response = await fetch('/calcular_prediccion_clinica', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ paciente_id: parseInt(pacienteId) })
+            });
+
+            const resultado = await response.json();
+
+            if(resultado.error) {
+                alert(resultado.error);
+            } else {
+                mostrarResultadosClinicos(resultado);
+            }
+        } catch (error) {
+            alert("Error de conexión con el servidor.");
+        } finally {
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+            lucide.createIcons();
+        }
+    }
+
+function mostrarResultadosClinicos(res) {
+        ultimosResultados = res; 
+
+        const viejo = document.getElementById('panelResultados');
+        if(viejo) viejo.remove();
+
+        const panel = document.createElement('div');
+        panel.id = 'panelResultados';
+        panel.className = 'mt-8 bg-gray-900 text-white p-6 md:p-8 rounded-3xl shadow-2xl transition-all duration-500 border border-gray-700';
+        
+        const colorRiesgo = res.nivel_riesgo === 'Alto' ? 'text-red-500' : (res.nivel_riesgo === 'Moderado' ? 'text-orange-400' : 'text-emerald-400');
+
+        // Lógica para mostrar la alerta lobulillar solo si existe
+        let alertaLobulillarHTML = '';
+        if (res.recomendacion_terapeutica.alerta_lobulillar !== "") {
+            alertaLobulillarHTML = `
+                <div class="bg-orange-500/10 border border-orange-500/30 p-4 rounded-xl flex items-start gap-3 md:col-span-2">
+                    <div class="p-2 bg-orange-500/20 rounded-md border border-orange-500/50">
+                        <i data-lucide="alert-triangle" class="w-4 h-4 text-orange-400"></i>
+                    </div>
+                    <div>
+                        <p class="text-[10px] text-orange-400 font-bold uppercase tracking-widest mb-1">Alerta Anatómica Especial</p>
+                        <p class="text-sm font-medium text-orange-200 leading-snug">${res.recomendacion_terapeutica.alerta_lobulillar}</p>
+                    </div>
+                </div>
+            `;
+        }
+
+        panel.innerHTML = `
+            <h3 class="font-black uppercase tracking-widest text-pink-400 mb-6 border-b border-gray-700 pb-4 flex items-center gap-2">
+                <i data-lucide="activity" class="w-5 h-5"></i> Resultados del Pronóstico Oncológico
+            </h3>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                <div class="bg-gray-800 p-5 rounded-xl border border-gray-700 shadow-inner">
+                    <p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest mb-2"><i data-lucide="alert-triangle" class="inline w-3 h-3 mr-1"></i> Riesgo de Recaída</p>
+                    <p class="text-3xl font-black ${colorRiesgo}">${res.nivel_riesgo}</p>
+                    <p class="text-xs text-gray-400 mt-2">${res.probabilidad_recaida}% de probabilidad estimada a 5 años.</p>
+                </div>
+                
+                <div class="bg-gray-800 p-5 rounded-xl border border-gray-700 shadow-inner">
+                    <p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest mb-2"><i data-lucide="microscope" class="inline w-3 h-3 mr-1"></i> Agresividad Biológica</p>
+                    <p class="text-xl font-black text-white">${res.perfil_agresividad}</p>
+                    <p class="text-xs text-gray-400 mt-2">Score de Nottingham (NPI): ${res.npi_score}</p>
+                </div>
+            </div>
+
+            <div class="bg-gray-800 p-6 rounded-xl border border-gray-700 shadow-inner mb-8">
+                <p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest mb-4 border-b border-gray-700 pb-2">
+                    <i data-lucide="stethoscope" class="inline w-4 h-4 mr-1"></i> Plan Terapéutico Sugerido por la IA
+                </p>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    
+                    <div class="bg-gray-900/50 p-4 rounded-xl border border-gray-700 flex items-start gap-3">
+                        <div class="p-2 bg-blue-500/10 rounded-md border border-blue-500/20">
+                            <i data-lucide="scissors" class="w-4 h-4 text-blue-400"></i>
+                        </div>
+                        <div>
+                            <p class="text-[10px] text-blue-400 font-bold uppercase tracking-widest mb-1">Ruta Quirúrgica</p>
+                            <p class="text-sm font-medium text-gray-200 leading-snug">${res.recomendacion_terapeutica.quirurgica}</p>
+                        </div>
+                    </div>
+
+                    <div class="bg-gray-900/50 p-4 rounded-xl border border-gray-700 flex items-start gap-3">
+                        <div class="p-2 bg-pink-500/10 rounded-md border border-pink-500/20">
+                            <i data-lucide="pill" class="w-4 h-4 text-pink-400"></i>
+                        </div>
+                        <div>
+                            <p class="text-[10px] text-pink-400 font-bold uppercase tracking-widest mb-1">Esquema Farmacológico</p>
+                            <p class="text-sm font-medium text-gray-200 leading-snug">${res.recomendacion_terapeutica.farmacologica}</p>
+                        </div>
+                    </div>
+
+                    <div class="bg-red-900/20 p-4 rounded-xl border border-red-500/30 flex items-start gap-3 md:col-span-2 mt-2">
+                        <div class="p-2 bg-red-500/20 rounded-md border border-red-500/50">
+                            <i data-lucide="shield-alert" class="w-4 h-4 text-red-500"></i>
+                        </div>
+                        <div>
+                            <p class="text-[10px] text-red-400 font-bold uppercase tracking-widest mb-1">Indicador de Calidad (NOM-041-SSA2-2011)</p>
+                            <p class="text-sm font-bold text-red-200 leading-snug">${res.recomendacion_terapeutica.nom_041}</p>
+                        </div>
+                    </div>
+                    
+                    ${alertaLobulillarHTML}
+
+                </div>
+            </div>
+
+            <div class="flex flex-col md:flex-row justify-center gap-4 pt-4 border-t border-gray-800">
+                <button onclick="guardarEnHistorialClinico()" class="bg-pink-600 hover:bg-pink-500 text-white font-bold py-4 px-8 rounded-xl transition flex items-center justify-center gap-2 text-xs uppercase tracking-widest shadow-lg shadow-pink-900/50 active:scale-95 w-full md:w-auto">
+                    <i data-lucide="save" class="w-5 h-5"></i> Guardar Pronóstico en Expediente
+                </button>
+            </div>
+        `;
+
+        document.getElementById('seccionDatos').appendChild(panel);
+        lucide.createIcons();
+        panel.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    }
+</script>
+{% endblock %}

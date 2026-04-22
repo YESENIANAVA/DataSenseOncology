@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Acceso Hospitalario - Predicción Tumoral</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body class="bg-gray-50 flex items-center justify-center min-h-screen font-sans">
+    <div class="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md border border-gray-200">
+        
+        <div class="flex justify-center mb-8">
+            <div class="w-32 h-32 flex items-center justify-center bg-gray-100 rounded-full border border-gray-100 shadow-inner">
+                <img src="/static/datasese.png" alt="Logo Hospital" class="max-h-24 object-contain">
+            </div>
+        </div>
+
+        <h2 class="text-2xl font-bold text-gray-800 text-center mb-2">Acceso Médico</h2>
+        <p class="text-gray-500 text-center text-sm mb-6">Inicie sesión para continuar con la predicción</p>
+        
+        <form action="/login" method="post" class="space-y-4">
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-1">Usuario Médico</label>
+                <input type="text" name="username" required 
+                    class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-400 outline-none bg-gray-50 transition-all"
+                    placeholder="ej. dr_xxxxxx">
+            </div>
+            
+            <div class="relative">
+                <label class="block text-sm font-semibold text-gray-700 mb-1">Contraseña</label>
+                <div class="relative">
+                    <input type="password" id="password_input" name="password" required 
+                        class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-400 outline-none bg-gray-50 transition-all"
+                        placeholder="••••••••">
+                    
+                    <button type="button" onclick="togglePassword()" 
+                            class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors">
+                        <i id="eye_icon" data-lucide="eye"></i>
+                    </button>
+                </div>
+            </div>
+
+            <button type="submit" class="w-full bg-gray-800 text-white p-3 rounded-lg font-bold hover:bg-gray-700 transition-all shadow-lg active:scale-[0.98] mt-4">
+                Entrar al Sistema
+            </button>
+            <div class="mt-4 text-center">
+                <a href="/recuperar" class="text-sm text-gray-600 hover:text-gray-800 hover:underline font-semibold transition-colors flex items-center justify-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                    ¿Olvidaste tu contraseña? Usa Face ID
+                </a>
+            </div>
+        </form>
+
+        <p class="mt-8 text-center text-[10px] text-gray-400 uppercase tracking-widest font-semibold">
+            Protocolo de Seguridad Hospitalaria Activo
+        </p>
+    </div>
+
+    <script>
+        // Inicializar los iconos
+        lucide.createIcons();
+
+        function togglePassword() {
+            const passwordInput = document.getElementById('password_input');
+            const eyeIcon = document.getElementById('eye_icon');
+            
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                // Cambiamos el icono a "ojo tachado"
+                eyeIcon.setAttribute('data-lucide', 'eye-off');
+            } else {
+                passwordInput.type = 'password';
+                // Cambiamos el icono a "ojo"
+                eyeIcon.setAttribute('data-lucide', 'eye');
+            }
+            // Refrescar los iconos para que se vea el cambio
+            lucide.createIcons();
+        }
+    </script>
+</body>
+</html>

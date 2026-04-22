@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>CancerPredic - Expediente Clínico</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <style>
+        /* Estilos para que el PDF y la pantalla se vean como un formato médico de papel */
+        .ficha-tabla { border-collapse: collapse; width: 100%; margin-bottom: 1.5rem; }
+        .ficha-tabla th, .ficha-tabla td { border: 1px solid #94a3b8; padding: 0.5rem; text-align: left; }
+        .ficha-tabla th { background-color: #f1f5f9; color: #334155; font-size: 0.70rem; text-transform: uppercase; letter-spacing: 0.05em; width: 20%; }
+        .ficha-tabla td { font-size: 0.85rem; color: #0f172a; font-weight: 500; }
+        .titulo-seccion { background-color: #1f2937; color: white; padding: 0.4rem; font-size: 0.8rem; font-weight: bold; text-transform: uppercase; text-align: center; margin-bottom: 0; border: 1px solid #1f2937; border-radius: 4px 4px 0 0; }
+        .tabla-contenedor { border: 1px solid #1f2937; border-top: none; padding: 0; margin-bottom: 1.5rem; border-radius: 0 0 4px 4px; overflow: hidden;}
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+
+    <header class="bg-gray-900 text-white p-4 shadow-lg flex justify-between items-center px-8">
+        <div class="flex items-center gap-3">
+            <i data-lucide="folder-open" class="text-gray-400"></i>
+            <h1 class="font-bold uppercase tracking-widest text-sm">Sistema de Gestión Hospitalaria</h1>
+        </div>
+        <a href="/dashboard?user={{ doctor.username }}" class="text-xs font-bold bg-gray-800 px-4 py-2 rounded-lg hover:bg-gray-700 transition flex items-center gap-2">
+            <i data-lucide="arrow-left" class="w-4 h-4"></i> Volver al Panel
+        </a>
+    </header>
+
+    <main class="p-6 max-w-[1000px] mx-auto space-y-6">
+        
+        <div class="bg-white p-4 rounded-xl shadow-md border border-gray-200 flex items-center gap-4 print:hidden">
+            <div class="w-full relative">
+                <i data-lucide="search" class="absolute left-3 top-2.5 w-5 h-5 text-gray-400"></i>
+                <input type="text" id="buscadorPaciente" onkeyup="filtrarPacientes()" placeholder="Buscar paciente por nombre o ID..." autocomplete="off"
+                    class="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-gray-400 outline-none transition">
+                <ul id="listaResultados" class="absolute z-20 w-full bg-white border border-gray-200 rounded-lg mt-1 shadow-2xl hidden max-h-48 overflow-y-auto"></ul>
+            </div>
+        </div>
+
+        {% if not paciente_seleccionado %}
+        <div class="flex flex-col items-center justify-center py-20 opacity-50">
+            <i data-lucide="folder-search" class="w-24 h-24 text-gray-300 mb-4"></i>
+            <h2 class="text-xl font-bold text-gray-400">Ningún Expediente Abierto</h2>
+        </div>
+        {% else %}
+        
+        <div class="relative">
+            <button onclick="generarPDF('{{ paciente_seleccionado.nombre_completo }}')" id="btn-pdf" class="absolute -top-4 -right-4 bg-red-600 text-white hover:bg-red-700 p-3 rounded-full transition shadow-xl z-10" title="Exportar a PDF">
+                <i data-lucide="printer" class="w-5 h-5"></i>
+            </button>
+
+            <div id="area-imprimible" class="bg-white p-10 shadow-xl border border-gray-300">
+                
+                <div class="flex justify-between items-center border-b-2 border-gray-900 pb-4 mb-6">
+                    <div class="flex items-center gap-4">
+                        <div class="bg-gray-900 p-3 rounded-lg text-white"><i data-lucide="activity" class="w-8 h-8"></i></div>
+                        <div>
+                            <h1 class="text-2xl font-black text-gray-900 uppercase">Ficha Clínica Oncológica</h1>
+                            <p class="text-xs font-bold text-gray-500 uppercase tracking-widest">CancerPredic - Expediente Oficial</p>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-sm font-bold text-red-600">ID EXPEDIENTE: #{{ paciente_seleccionado.id }}</p>
+                        <p class="text-xs text-gray-500" id="fecha-impresion"></p>
+                    </div>
+                </div>
+
+                <h2 class="titulo-seccion">Ficha de Identificación</h2>
+                <div class="tabla-contenedor">
+                    <table class="ficha-tabla" style="margin-bottom: 0;">
+                        <tr>
+                            <th>Nombre Completo</th>
+                            <td colspan="3" class="font-black text-gray-900">{{ paciente_seleccionado.nombre_completo }}</td>
+                        </tr>
+                        <tr>
+                            <th>Edad</th>
+                            <td>{{ paciente_seleccionado.edad }} años</td>
+                            <th>Género</th>
+                            <td>{{ paciente_seleccionado.genero }}</td>
+                        </tr>
+                        <tr>
+                            <th>Domicilio / Origen</th>
+                            <td colspan="3">{{ paciente_seleccionado.direccion or paciente_seleccionado.ciudad or 'No especificado' }}</td>
+                        </tr>
+                        <tr>
+                            <th>Teléfono</th>
+                            <td>{{ paciente_seleccionado.telefono or 'N/A' }}</td>
+                            <th>Estado Civil</th>
+                            <td>{{ paciente_seleccionado.estado_civil or 'No especificado' }}</td>
+                        </tr>
+                    </table>
+                </div>
+
+                <h2 class="titulo-seccion mt-6">Antecedentes Médicos</h2>
+                <div class="tabla-contenedor">
+                    <table class="ficha-tabla" style="margin-bottom: 0;">
+                        <tr>
+                            <th>Tipo de Sangre</th>
+                            <td class="font-bold text-red-600">{{ paciente_seleccionado.tipo_sangre }}</td>
+                            <th>Religión</th>
+                            <td>{{ paciente_seleccionado.religion or 'No especificado' }}</td>
+                        </tr>
+                        <tr>
+                            <th>Enfermedades Crónicas</th>
+                            <td colspan="3">{{ paciente_seleccionado.enfermedad_cronica or 'Ninguna referida' }}</td>
+                        </tr>
+                        <tr>
+                            <th>Antecedentes Patológicos</th>
+                            <td colspan="3">{{ paciente_seleccionado.antecedentes_patologicos or 'Sin registro' }}</td>
+                        </tr>
+                        <tr>
+                            <th>Heredofamiliares</th>
+                            <td colspan="3">{{ paciente_seleccionado.antecedentes_heredofamiliares or 'Sin registro' }}</td>
+                        </tr>
+                    </table>
+                </div>
+
+                <h2 class="titulo-seccion mt-6">Diagnóstico Oncológico Base y Predicción Teórica</h2>
+                <div class="tabla-contenedor">
+                    {% if tumor %}
+                    <table class="ficha-tabla" style="margin-bottom: 0;">
+                        <tr>
+                            <th>Tipo de Tumor</th>
+                            <td class="font-bold text-gray-900">{{ tumor.tipo_tumor }}</td>
+                            <th>Ubicación</th>
+                            <td>{{ tumor.ubicacion }}</td>
+                        </tr>
+                        <tr>
+                            <th>Etapa Clínica</th>
+                            <td class="font-bold text-red-600">Etapa {{ tumor.etapa }}</td>
+                            <th>Dimensiones (mm)</th>
+                            <td>L: {{ tumor.largo or tumor.dimension_largo or 0 }} x A: {{ tumor.ancho or tumor.dimension_ancho or 0 }} x P: {{ tumor.profundidad or tumor.dimension_profundidad or 0 }}</td>
+                        </tr>
+                        <tr>
+                            <th class="bg-gray-200">Volumen Inicial Teórico</th>
+                            <td class="font-black" id="vol-teorico-celda">Calculando...</td>
+                            <th class="bg-red-100 text-red-900">Proyección Teórica (30d)</th>
+                            <td class="font-black text-red-600" id="proy-teorica-celda">Calculando...</td>
+                        </tr>
+                    </table>
+                    {% else %}
+                    <div class="p-4 text-center text-sm font-bold text-gray-400 bg-gray-50">
+                        No hay diagnóstico oncológico registrado en el sistema.
+                    </div>
+                    {% endif %}
+                </div>
+
+                <h2 class="titulo-seccion mt-6 bg-gray-800 border-gray-800">Seguimiento Clínico Interactivo (Motor Numérico IA)</h2>
+                <div class="border border-gray-800 p-4 rounded-b-md">
+                    {% if predicciones and predicciones|length > 0 %}
+                    <div class="grid grid-cols-3 gap-4 mb-4 text-center">
+                        <div class="bg-gray-100 p-2 border border-gray-300">
+                            <p class="text-[10px] text-gray-500 uppercase font-bold">Última Tasa Registrada</p>
+                            <p class="text-lg font-black">{{ predicciones[-1].tasa_crecimiento }}%</p>
+                        </div>
+                        <div class="bg-gray-100 p-2 border border-gray-300">
+                            <p class="text-[10px] text-gray-500 uppercase font-bold">Último Volumen Real</p>
+                            <p class="text-lg font-black text-gray-800">{{ predicciones[-1].volumen_actual }} mm³</p>
+                        </div>
+                        <div class="bg-gray-100 p-2 border border-gray-300">
+                            <p class="text-[10px] text-gray-500 uppercase font-bold">Estado Actual</p>
+                            <p class="text-xs font-black mt-1 text-gray-800">{{ predicciones[-1].tendencia }}</p>
+                        </div>
+                    </div>
+                    
+                    <div class="w-full bg-white border border-gray-200 p-2">
+                        <canvas id="graficaHistorial" height="80"></canvas>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-8">
+                        <p class="text-sm font-bold text-gray-400 mb-2">No se han registrado mediciones de seguimiento real.</p>
+                        <a href="/prediccion_crecimiento?user={{ doctor.username }}" class="text-xs bg-gray-800 text-white px-4 py-2 rounded shadow print:hidden inline-block hover:bg-gray-700 transition">Añadir Medición Real</a>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <div class="mt-16 grid grid-cols-2 gap-8 text-center px-10">
+                    <div>
+                        <div class="border-b border-gray-800 h-10 mb-2"></div>
+                        <p class="text-xs font-bold text-gray-600 uppercase">Firma del Médico Tratante</p>
+                        <p class="text-[10px] text-gray-400">Dr. {{ doctor.nombre }} (Céd: {{ doctor.cedula }})</p>
+                    </div>
+                    <div>
+                        <div class="border-b border-gray-800 h-10 mb-2"></div>
+                        <p class="text-xs font-bold text-gray-600 uppercase">Firma del Paciente / Familiar</p>
+                        <p class="text-[10px] text-gray-400">{{ paciente_seleccionado.nombre_completo }}</p>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+        {% endif %}
+    </main>
+
+    <script>
+        lucide.createIcons();
+        
+        // ==========================================
+        // 1. FECHA DE IMPRESIÓN (Corregido)
+        // Verificamos si existe el elemento antes de ponerle la fecha para no romper JS
+        // ==========================================
+        const elementoFecha = document.getElementById('fecha-impresion');
+        if (elementoFecha) {
+            elementoFecha.innerText = "Impreso el: " + new Date().toLocaleDateString('es-ES');
+        }
+
+        // ==========================================
+        // 2. CÁLCULO DE PREDICCIÓN TEÓRICA AUTOMÁTICO
+        // ==========================================
+        {% if tumor %}
+        document.addEventListener("DOMContentLoaded", function() {
+            const largo = parseFloat("{{ tumor.largo or tumor.dimension_largo or 0 }}");
+            const ancho = parseFloat("{{ tumor.ancho or tumor.dimension_ancho or 0 }}");
+            const prof = parseFloat("{{ tumor.profundidad or tumor.dimension_profundidad or 0 }}");
+            
+            if(largo > 0 && ancho > 0 && prof > 0) {
+                const volumenInicial = (4/3) * Math.PI * (largo/2) * (ancho/2) * (prof/2);
+                document.getElementById('vol-teorico-celda').innerText = volumenInicial.toFixed(2) + " mm³";
+                
+                const proy30 = volumenInicial * Math.exp(0.015 * 30);
+                document.getElementById('proy-teorica-celda').innerText = proy30.toFixed(2) + " mm³";
+            } else {
+                document.getElementById('vol-teorico-celda').innerText = "Dimensión faltante";
+                document.getElementById('proy-teorica-celda').innerText = "N/A";
+            }
+        });
+        {% endif %}
+
+        // ==========================================
+        // 3. GRÁFICA REAL DE CHART.JS
+        // ==========================================
+        {% if predicciones and predicciones|length > 0 %}
+        document.addEventListener("DOMContentLoaded", function() {
+            const ctx = document.getElementById('graficaHistorial').getContext('2d');
+            
+            const fechas = [ {% for p in predicciones %} "{{ p.fecha_registro }}", {% endfor %} ];
+            const volumenes = [ {% for p in predicciones %} {{ p.volumen_actual }}, {% endfor %} ];
+
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: fechas,
+                    datasets: [{
+                        label: 'Evolución del Volumen Tumoral (mm³)',
+                        data: volumenes,
+                        borderColor: '#1f2937', // Gris Institucional
+                        backgroundColor: '#1f2937',
+                        borderWidth: 2,
+                        tension: 0.3,
+                        pointRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { ticks: { font: {size: 10} } },
+                        y: { ticks: { font: {size: 10} } }
+                    }
+                }
+            });
+        });
+        {% endif %}
+
+        // ==========================================
+        // 4. LÓGICA DEL BUSCADOR (Restaurado y Protegido)
+        // ==========================================
+        const pacientesDB = [
+            {% for p in pacientes %}
+            { id: {{ p.id }}, nombre: "{{ p.nombre_completo }}" },
+            {% endfor %}
+        ];
+
+        function filtrarPacientes() {
+            const input = document.getElementById('buscadorPaciente').value.toLowerCase();
+            const lista = document.getElementById('listaResultados');
+            lista.innerHTML = ''; 
+
+            if (input.length < 1) {
+                lista.classList.add('hidden');
+                return;
+            }
+
+            const filtrados = pacientesDB.filter(p => p.nombre.toLowerCase().includes(input) || p.id.toString().includes(input));
+
+            if (filtrados.length > 0) {
+                lista.classList.remove('hidden');
+                filtrados.forEach(p => {
+                    const li = document.createElement('li');
+                    li.className = "p-3 hover:bg-gray-100 cursor-pointer border-b border-gray-200 text-sm flex justify-between items-center";
+                    li.innerHTML = `<span><i data-lucide="user" class="inline w-4 h-4 mr-2"></i>${p.nombre}</span> <span class="text-[10px] bg-gray-200 text-gray-800 px-2 py-0.5 rounded">ID: ${p.id}</span>`;
+                    li.onclick = () => { window.location.href = `/historial_medico?user={{ doctor.username }}&paciente_id=${p.id}`; };
+                    lista.appendChild(li);
+                });
+                lucide.createIcons();
+            } else {
+                // Restauramos el mensaje de "No encontrado"
+                lista.classList.remove('hidden');
+                lista.innerHTML = `<li class="p-3 text-sm text-gray-400 italic text-center">No se encontraron pacientes.</li>`;
+            }
+        }
+
+        // ==========================================
+        // 5. EXPORTACIÓN A PDF FORMATO A4 VERTICAL
+        // ==========================================
+        function generarPDF(nombrePaciente) {
+            const elemento = document.getElementById('area-imprimible');
+            const botonPDF = document.getElementById('btn-pdf');
+            
+            if(botonPDF) botonPDF.style.display = 'none';
+
+            const opciones = {
+                margin:       10, 
+                filename:     `Expediente_Clinico_${nombrePaciente.replace(/\s+/g, '_')}.pdf`,
+                image:        { type: 'jpeg', quality: 0.98 },
+                html2canvas:  { scale: 2, useCORS: true }, 
+                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
+
+            html2pdf().set(opciones).from(elemento).save().then(() => {
+                if(botonPDF) botonPDF.style.display = 'block';
+            });
+        }
+    </script>
+</body>
+</html>

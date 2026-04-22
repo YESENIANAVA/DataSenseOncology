@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CancerPredic - Predicción de Crecimiento</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="bg-gray-50 min-h-screen font-sans">
+
+    <header class="bg-gray-900 text-white p-4 shadow-lg flex justify-between items-center px-8">
+        <div class="flex items-center gap-3">
+            <i data-lucide="trending-up" class="text-pink-500"></i>
+            <h1 class="font-bold text-lg tracking-widest uppercase text-white">Análisis de Crecimiento Tumoral</h1>
+        </div>
+        <a href="/dashboard?user={{ doctor.username }}" class="bg-gray-800 hover:bg-gray-700 px-4 py-2 rounded-lg text-sm font-bold transition flex items-center gap-2">
+            <i data-lucide="arrow-left" class="w-4 h-4"></i> Volver al Panel
+        </a>
+    </header>
+
+    <main class="p-8 max-w-[1000px] mx-auto space-y-8">
+        
+        <div class="bg-white p-8 rounded-3xl shadow-xl border border-gray-200">
+            <h2 class="text-pink-800 font-black uppercase italic mb-4 border-b border-gray-100 pb-2">1. Selección de Paciente</h2>
+            
+            <div class="relative w-full md:w-2/3">
+                <label class="block text-[10px] font-bold text-gray-400 uppercase mb-2">Buscar por Nombre o ID</label>
+                <div class="relative">
+                    <i data-lucide="search" class="absolute left-3 top-3 w-5 h-5 text-gray-400"></i>
+                    <input type="text" id="buscadorPaciente" onkeyup="filtrarPacientes()" placeholder="Ej. Janeth Ramos..." autocomplete="off"
+                        class="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-pink-500 outline-none transition">
+                </div>
+                
+                <ul id="listaResultados" class="absolute z-10 w-full bg-white border border-gray-200 rounded-xl mt-1 shadow-2xl hidden max-h-48 overflow-y-auto">
+                    </ul>
+            </div>
+
+            <div id="pacienteSeleccionado" class="hidden mt-6 bg-pink-50 border border-pink-200 p-4 rounded-xl flex items-center justify-between">
+                <div>
+                    <p class="text-[10px] font-bold text-pink-600 uppercase tracking-widest">Paciente Vinculado</p>
+                    <p id="nombrePacienteLabel" class="text-lg font-black text-pink-900"></p>
+                    <input type="hidden" id="pacienteIdSecreto" name="paciente_id">
+                </div>
+                <button onclick="limpiarPaciente()" class="text-gray-400 hover:text-red-500 transition">
+                    <i data-lucide="x-circle"></i>
+                </button>
+            </div>
+        </div>
+
+        <div id="seccionDatos" class="bg-white p-8 rounded-3xl shadow-xl border border-gray-200 opacity-50 pointer-events-none transition-opacity duration-300">
+            <div class="flex justify-between items-end mb-6 border-b border-gray-100 pb-2">
+                <div>
+                    <h2 class="text-pink-800 font-black uppercase italic">2. Historial de Mediciones</h2>
+                    <p class="text-xs text-gray-500">Ingrese las fechas reales y el volumen detectado en cada ecografía/TAC.</p>
+                </div>
+                <button onclick="agregarFila()" class="bg-pink-100 hover:bg-pink-200 text-pink-700 px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-widest flex items-center gap-2 transition">
+                    <i data-lucide="plus" class="w-4 h-4"></i> Añadir Registro
+                </button>
+            </div>
+
+            <table class="w-full text-left mb-6">
+                <thead>
+                    <tr class="text-[10px] font-bold text-gray-400 uppercase">
+                        <th class="pb-3 w-1/4">Fecha</th>
+                        <th class="pb-3 w-1/4">Volumen (mm³)</th>
+                        <th class="pb-3 w-1/4 text-center">Tratamiento</th>
+                        <th class="pb-3 text-center">Acción</th>
+                    </tr>
+                </thead>
+                <tbody id="tablaMediciones" class="space-y-2">
+                    <tr class="fila-medicion border-b border-gray-50">
+                        <td class="py-2 pr-2"><input type="date" class="w-full bg-gray-50 border border-gray-200 p-2 rounded-lg text-sm outline-none"></td>
+                        <td class="py-2 px-2"><input type="number" step="0.01" placeholder="Ej. 120.5" class="w-full bg-gray-50 border border-gray-200 p-2 rounded-lg text-sm outline-none"></td>
+                        <td class="py-2 px-2 text-center">
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" class="sr-only peer chk-tratamiento">
+                                <div class="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-green-500"></div>
+                            </label>
+                        </td>
+                        <td class="py-2 text-center text-gray-300"><i data-lucide="lock" class="w-4 h-4 mx-auto"></i></td>
+                    </tr>
+                    <tr class="fila-medicion border-b border-gray-50">
+                        <td class="py-2 pr-2"><input type="date" class="w-full bg-gray-50 border border-gray-200 p-2 rounded-lg text-sm outline-none"></td>
+                        <td class="py-2 px-2"><input type="number" step="0.01" placeholder="Ej. 135.2" class="w-full bg-gray-50 border border-gray-200 p-2 rounded-lg text-sm outline-none"></td>
+                        <td class="py-2 px-2 text-center">
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" class="sr-only peer chk-tratamiento">
+                                <div class="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-green-500"></div>
+                            </label>
+                        </td>
+                        <td class="py-2 text-center text-gray-300"><i data-lucide="lock" class="w-4 h-4 mx-auto"></i></td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <button id="btnCalcular" onclick="procesarPrediccion()" class="w-full bg-pink-700 hover:bg-pink-800 text-white font-black py-4 rounded-xl shadow-lg transition uppercase tracking-widest text-sm flex justify-center items-center gap-2">
+                <i data-lucide="cpu" class="w-5 h-5"></i> Ejecutar Modelo Predictivo
+            </button>
+        </div>
+
+    </main>
+
+    <script>
+        lucide.createIcons();
+
+        // ==========================================
+        // 1. LÓGICA DEL BUSCADOR DE PACIENTES
+        // ==========================================
+        const pacientesDB = [
+            {% for p in pacientes %}
+            { id: {{ p.id }}, nombre: "{{ p.nombre_completo }}" },
+            {% endfor %}
+        ];
+
+        function filtrarPacientes() {
+            const input = document.getElementById('buscadorPaciente').value.toLowerCase();
+            const lista = document.getElementById('listaResultados');
+            lista.innerHTML = ''; 
+
+            if (input.length < 1) {
+                lista.classList.add('hidden');
+                return;
+            }
+
+            const filtrados = pacientesDB.filter(p => 
+                p.nombre.toLowerCase().includes(input) || p.id.toString().includes(input)
+            );
+
+            if (filtrados.length > 0) {
+                lista.classList.remove('hidden');
+                filtrados.forEach(p => {
+                    const li = document.createElement('li');
+                    li.className = "p-3 hover:bg-pink-50 cursor-pointer border-b border-gray-100 text-sm text-gray-700 flex justify-between";
+                    li.innerHTML = `<span><i data-lucide="user" class="inline w-4 h-4 mr-2 text-gray-400"></i>${p.nombre}</span> <span class="text-[10px] font-bold text-pink-600">ID: ${p.id}</span>`;
+                    li.onclick = () => seleccionarPaciente(p.id, p.nombre);
+                    lista.appendChild(li);
+                });
+                lucide.createIcons();
+            } else {
+                lista.classList.remove('hidden');
+                lista.innerHTML = `<li class="p-3 text-sm text-gray-400 italic text-center">No se encontraron pacientes.</li>`;
+            }
+        }
+
+        function seleccionarPaciente(id, nombre) {
+            document.getElementById('buscadorPaciente').value = '';
+            document.getElementById('listaResultados').classList.add('hidden');
+            
+            // Mostrar tarjeta
+            document.getElementById('pacienteSeleccionado').classList.remove('hidden');
+            document.getElementById('nombrePacienteLabel').innerText = nombre;
+            document.getElementById('pacienteIdSecreto').value = id;
+            
+            // Desbloquear tabla
+            document.getElementById('seccionDatos').classList.remove('opacity-50', 'pointer-events-none');
+        }
+
+        function limpiarPaciente() {
+            document.getElementById('pacienteSeleccionado').classList.add('hidden');
+            document.getElementById('pacienteIdSecreto').value = '';
+            document.getElementById('seccionDatos').classList.add('opacity-50', 'pointer-events-none');
+        }
+
+        // ==========================================
+        // 2. LÓGICA DE LA TABLA Y PREDICCIÓN IA
+        // ==========================================
+        function agregarFila() {
+            const tbody = document.getElementById('tablaMediciones');
+            const tr = document.createElement('tr');
+            tr.className = "fila-medicion border-b border-gray-50";
+            tr.innerHTML = `
+                <td class="py-2 pr-2"><input type="date" class="w-full bg-gray-50 border border-gray-200 p-2 rounded-lg text-sm outline-none"></td>
+                <td class="py-2 px-2"><input type="number" step="0.01" placeholder="Ej. 150.0" class="w-full bg-gray-50 border border-gray-200 p-2 rounded-lg text-sm outline-none"></td>
+                <td class="py-2 px-2 text-center">
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" class="sr-only peer chk-tratamiento">
+                        <div class="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-green-500"></div>
+                    </label>
+                </td>
+                <td class="py-2 text-center">
+                    <button onclick="this.closest('tr').remove()" class="text-gray-300 hover:text-red-500 transition p-1 rounded-md hover:bg-red-50">
+                        <i data-lucide="trash-2" class="w-4 h-4 mx-auto"></i>
+                    </button>
+                </td>
+            `;
+            tbody.appendChild(tr);
+            lucide.createIcons();
+        }
+
+        async function procesarPrediccion() {
+            const pacienteId = document.getElementById('pacienteIdSecreto').value;
+            const filas = document.querySelectorAll('.fila-medicion');
+            
+            let datos = [];
+            let valid = true;
+
+            filas.forEach(fila => {
+                const fecha = fila.querySelector('input[type="date"]').value;
+                const volumen = fila.querySelector('input[type="number"]').value;
+                const enTratamiento = fila.querySelector('.chk-tratamiento').checked;
+                if(!fecha || !volumen) valid = false;
+                datos.push({fecha: fecha, volumen: parseFloat(volumen), tratamiento: enTratamiento});
+            });
+
+            if(!valid) {
+                alert("Por favor, complete todas las fechas y volúmenes antes de calcular.");
+                return;
+            }
+            if(datos.length < 2) {
+                alert("Se necesitan al menos 2 mediciones para calcular el crecimiento.");
+                return;
+            }
+
+            // Cambiar botón a estado de carga
+            const btn = document.getElementById('btnCalcular');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = `<i data-lucide="loader-2" class="w-5 h-5 animate-spin"></i> Ejecutando Algoritmo...`;
+            btn.disabled = true;
+
+            try {
+                // Enviamos los datos a Python
+                const response = await fetch('/calcular_prediccion_real', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        paciente_id: parseInt(pacienteId),
+                        historial: datos
+                    })
+                });
+
+                const resultado = await response.json();
+
+                if(resultado.error) {
+                    alert("Error matemático: " + resultado.error);
+                } else {
+                    mostrarResultados(resultado);
+                }
+            } catch (error) {
+                console.error(error);
+                alert("Fallo de conexión con el motor IA.");
+            } finally {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+                lucide.createIcons();
+            }
+        }
+
+        let ultimosResultados = null; // Variable para guardar los datos para la gráfica
+
+        function mostrarResultados(res) {
+            ultimosResultados = res; // Guardamos los resultados globalmente
+
+            const viejo = document.getElementById('panelResultados');
+            if(viejo) viejo.remove();
+
+            const panel = document.createElement('div');
+            panel.id = 'panelResultados';
+            panel.className = 'mt-8 bg-gray-900 text-white p-6 rounded-3xl shadow-2xl transition-all duration-500';
+            
+            panel.innerHTML = `
+                <h3 class="font-black uppercase tracking-widest text-pink-400 mb-4 border-b border-gray-700 pb-2 flex items-center gap-2">
+                    <i data-lucide="brain-circuit" class="w-5 h-5"></i> Resultados del Modelo Numérico
+                </h3>
+                
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                    <div class="bg-gray-800 p-4 rounded-xl text-center border border-gray-700">
+                        <p class="text-[10px] text-pink-400 font-bold uppercase tracking-widest mb-1">Días Analizados</p>
+                        <p class="text-2xl font-black">${res.dias_analizados}</p>
+                    </div>
+                    <div class="bg-gray-800 p-4 rounded-xl text-center border border-gray-700">
+                        <p class="text-[10px] text-pink-400 font-bold uppercase tracking-widest mb-1">Tasa Diaria de Crecimiento</p>
+                        <p class="text-2xl font-black ${res.color_tendencia}">${res.tasa_diaria_porcentaje}%</p>
+                    </div>
+                    <div class="bg-gray-800 p-4 rounded-xl text-center border border-gray-700">
+                        <p class="text-[10px] text-pink-400 font-bold uppercase tracking-widest mb-1">Volumen Actual</p>
+                        <p class="text-2xl font-black">${res.volumen_actual} <span class="text-xs">mm³</span></p>
+                    </div>
+                    <div class="bg-gray-800 p-4 rounded-xl text-center border border-gray-700">
+                        <p class="text-[10px] text-pink-400 font-bold uppercase tracking-widest mb-1">Comportamiento</p>
+                        <p class="text-sm font-black mt-2 ${res.color_tendencia}">${res.tendencia}</p>
+                    </div>
+                </div>
+
+                <div class="bg-white text-gray-800 p-6 rounded-2xl mb-6">
+                    <h4 class="font-bold text-sm uppercase text-gray-400 mb-4 tracking-tighter">Proyección de Expansión</h4>
+                    <div class="grid grid-cols-3 gap-4">
+                        <div class="text-center border-r border-gray-100">
+                            <p class="text-xs font-bold text-gray-400 mb-1">En 30 Días</p>
+                            <p class="text-2xl font-black text-pink-600">${res.prediccion_30_dias}</p>
+                            <p class="text-[9px] text-gray-400 uppercase">mm³</p>
+                        </div>
+                        <div class="text-center border-r border-gray-100">
+                            <p class="text-xs font-bold text-gray-400 mb-1">En 60 Días</p>
+                            <p class="text-2xl font-black text-orange-500">${res.prediccion_60_dias}</p>
+                            <p class="text-[9px] text-gray-400 uppercase">mm³</p>
+                        </div>
+                        <div class="text-center">
+                            <p class="text-xs font-bold text-gray-400 mb-1">En 90 Días</p>
+                            <p class="text-2xl font-black text-red-600">${res.prediccion_90_dias}</p>
+                            <p class="text-[9px] text-gray-400 uppercase">mm³</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex flex-col md:flex-row justify-center gap-4 border-t border-gray-700 pt-6">
+                    <button onclick="dibujarGrafica()" class="bg-gray-700 hover:bg-gray-600 text-white font-bold py-3 px-6 rounded-xl transition flex items-center justify-center gap-2 text-xs uppercase tracking-widest shadow-lg">
+                        <i data-lucide="line-chart" class="w-4 h-4"></i> Ver Gráfica Dinámica
+                    </button>
+                    <button onclick="guardarEnHistorial()" class="bg-green-600 hover:bg-green-500 text-white font-bold py-3 px-6 rounded-xl transition flex items-center justify-center gap-2 text-xs uppercase tracking-widest shadow-lg shadow-green-900/50">
+                        <i data-lucide="save" class="w-4 h-4"></i> Guardar en Expediente
+                    </button>
+                </div>
+
+                <div id="contenedorGrafica" class="hidden mt-6 bg-white rounded-2xl p-4 shadow-inner">
+                    <canvas id="miGrafica"></canvas>
+                </div>
+            `;
+
+            document.getElementById('seccionDatos').appendChild(panel);
+            lucide.createIcons();
+            panel.scrollIntoView({ behavior: 'smooth', block: 'end' });
+        }
+
+        let chartInstance = null; // Para no encimar gráficas si le dan clic varias veces
+
+        function dibujarGrafica() {
+            // Mostramos el cuadro blanco
+            document.getElementById('contenedorGrafica').classList.remove('hidden');
+
+            // 1. Extraemos las fechas y volúmenes de la tabla que llenó el médico
+            const filas = document.querySelectorAll('.fila-medicion');
+            let labels = [];
+            let dataReales = [];
+
+            filas.forEach(fila => {
+                labels.push(fila.querySelector('input[type="date"]').value);
+                dataReales.push(parseFloat(fila.querySelector('input[type="number"]').value));
+            });
+
+            // 2. Preparamos las etiquetas a futuro (+30, +60, +90 días)
+            labels.push('+30 Días', '+60 Días', '+90 Días');
+            
+            // 3. Empalmamos la línea de predicción con el último punto real
+            let dataPrediccion = Array(dataReales.length - 1).fill(null);
+            dataPrediccion.push(dataReales[dataReales.length - 1]); // Conecta la realidad con la predicción
+            dataPrediccion.push(ultimosResultados.prediccion_30_dias);
+            dataPrediccion.push(ultimosResultados.prediccion_60_dias);
+            dataPrediccion.push(ultimosResultados.prediccion_90_dias);
+
+            // 4. Dibujamos la gráfica
+            const ctx = document.getElementById('miGrafica').getContext('2d');
+            if(chartInstance) chartInstance.destroy(); // Borra gráfica vieja si existe
+
+            chartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Volumen Clínico Registrado (mm³)',
+                            data: dataReales,
+                            borderColor: '#be185d', // Rosa oscuro
+                            backgroundColor: '#be185d',
+                            borderWidth: 3,
+                            tension: 0.3,
+                            pointRadius: 6
+                        },
+                        {
+                            label: 'Proyección Predictiva IA (mm³)',
+                            data: dataPrediccion,
+                            borderColor: '#ef4444', // Rojo punteado
+                            borderDash: [5, 5],
+                            borderWidth: 3,
+                            tension: 0.3,
+                            pointRadius: 6,
+                            pointBackgroundColor: '#ef4444'
+                        }
+                    ]
+                },
+                options: { 
+                    responsive: true, 
+                    plugins: { legend: { position: 'bottom' } } 
+                }
+            });
+
+            // Bajamos la pantalla suavemente hacia la gráfica
+            document.getElementById('contenedorGrafica').scrollIntoView({ behavior: 'smooth', block: 'end' });
+        }
+
+        async function guardarEnHistorial() {
+            // Buscamos el botón que se presionó
+            const btn = document.querySelector('button[onclick="guardarEnHistorial()"]');
+            const originalText = btn.innerHTML;
+            
+            // Efecto visual de carga
+            btn.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Guardando...`;
+            btn.disabled = true;
+
+            const pacienteId = document.getElementById('pacienteIdSecreto').value;
+
+            try {
+                // Enviamos los datos a Python de forma invisible
+                const response = await fetch('/guardar_prediccion_historial', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        paciente_id: parseInt(pacienteId),
+                        dias_analizados: ultimosResultados.dias_analizados,
+                        tasa_crecimiento: ultimosResultados.tasa_diaria_porcentaje,
+                        volumen_actual: ultimosResultados.volumen_actual,
+                        tendencia: ultimosResultados.tendencia,
+                        medico_operando: "{{ doctor.username }}" // Inyectamos quién está logueado
+                    })
+                });
+
+                const resultado = await response.json();
+
+                if(resultado.status === "success") {
+                    // Si todo sale bien, pintamos el botón de gris oscuro y le ponemos palomita
+                    btn.classList.replace('bg-green-600', 'bg-gray-800');
+                    btn.classList.replace('hover:bg-green-500', 'hover:bg-gray-700');
+                    btn.innerHTML = `<i data-lucide="check-circle" class="w-4 h-4"></i> ¡Guardado Exitoso!`;
+                    lucide.createIcons();
+                    
+                    // Esperamos 1.5 segundos para que el doctor vea el mensaje de éxito, y lo redirigimos a su historial
+                    setTimeout(() => {
+                        window.location.href = `/historial_medico?user={{ doctor.username }}&paciente_id=${pacienteId}`;
+                    }, 1500);
+                }
+
+            } catch (error) {
+                console.error("Error al guardar:", error);
+                alert("Hubo un error de conexión al intentar guardar en la base de datos.");
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+                lucide.createIcons();
+            }
+        }
+    </script>
+</body>
+</html>

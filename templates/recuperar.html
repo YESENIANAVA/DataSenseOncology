@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Recuperación por Face ID - DataSense Oncology</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 flex items-center justify-center h-screen">
+
+    <div class="bg-white p-8 rounded-2xl shadow-xl text-center w-96 border border-gray-200">
+        <h2 class="text-2xl font-black mb-4 text-gray-800 tracking-tight">Restablecer Contraseña</h2>
+        <p class="text-sm text-gray-500 mb-6">Ingresa tu usuario y mira fijamente a la cámara.</p>
+        
+        <input type="text" id="username" placeholder="Tu Usuario (Ej. doc_lopez)" class="w-full p-3 border border-gray-300 rounded-xl mb-4 text-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:border-transparent transition-all">
+        
+        <div class="bg-gray-100 p-2 rounded-xl mb-6 border border-gray-200">
+            <video id="video" width="320" height="240" autoplay class="mx-auto rounded-lg shadow-sm"></video>
+        </div>
+        <canvas id="canvas" style="display:none;"></canvas>
+
+        <button id="btn-escanear" class="w-full bg-gray-800 text-white font-bold py-3 rounded-xl hover:bg-gray-700 transition-colors shadow-md">
+            Escanear Rostro
+        </button>
+
+        <p id="mensaje" class="mt-4 font-bold text-sm h-5"></p>
+    </div>
+
+    <script>
+        // Encender la cámara web al abrir la página
+        const video = document.getElementById('video');
+        navigator.mediaDevices.getUserMedia({ video: true })
+            .then(stream => { video.srcObject = stream; })
+            .catch(err => { alert("Por favor permite el acceso a la cámara."); });
+
+        // Función para tomar la foto y enviarla a Python
+        document.getElementById('btn-escanear').addEventListener('click', async () => {
+            const username = document.getElementById('username').value;
+            const mensajeDiv = document.getElementById('mensaje');
+            
+            if(!username) {
+                mensajeDiv.textContent = "Primero ingresa tu usuario.";
+                mensajeDiv.className = "mt-4 font-bold text-sm text-red-600";
+                return;
+            }
+
+            // Cambiamos a gris para no lastimar la vista con colores chillones mientras carga
+            mensajeDiv.textContent = "Analizando biometría...";
+            mensajeDiv.className = "mt-4 font-bold text-sm text-gray-600 animate-pulse";
+
+            // Tomar la foto (dibujar el video en el canvas)
+            const canvas = document.getElementById('canvas');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            canvas.getContext('2d').drawImage(video, 0, 0);
+            
+            // Convertir la foto a un archivo que Python entienda (Blob)
+            canvas.toBlob(async (blob) => {
+                const formData = new FormData();
+                formData.append('username', username);
+                formData.append('foto_capturada', blob, 'webcam.jpg');
+
+                // Enviar a FastAPI
+                const response = await fetch('/verificar_biometria', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const resultado = await response.json();
+                
+                // Mantenemos los semáforos de éxito y error por usabilidad universal
+                if(resultado.status === 'success') {
+                    mensajeDiv.textContent = "✅ " + resultado.mensaje + " Redirigiendo...";
+                    mensajeDiv.className = "mt-4 font-bold text-sm text-green-600";
+                    
+                    setTimeout(() => {
+                        window.location.href = `/nueva_contrasena?user=${username}`;
+                    }, 1500); 
+                } else {
+                    mensajeDiv.textContent = "❌ " + resultado.mensaje;
+                    mensajeDiv.className = "mt-4 font-bold text-sm text-red-600";
+                }
+            }, 'image/jpeg');
+        });
+    </script>
+</body>
+</html>

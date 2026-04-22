@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% block title %}Panel Principal - DataSense{% endblock %}
+
+{% block extra_head %}
+<style>
+    /* Conservamos tu animación personalizada para el título */
+    @keyframes tracking-in-expand {
+        0% { letter-spacing: -0.5em; opacity: 0; }
+        40% { opacity: 0.6; }
+        100% { opacity: 1; }
+    }
+    .animate-title { animation: tracking-in-expand 1.2s cubic-bezier(0.215, 0.610, 0.355, 1.000) both; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="flex-1 flex flex-col items-center justify-center p-8 text-center h-[80vh]">
+    <h1 class="text-6xl md:text-8xl font-black text-gray-800 animate-title mb-6 tracking-tighter">
+        DataSense <span class="text-gray-500">Oncology</span>
+    </h1>
+    <div class="max-w-2xl">
+        <p class="text-lg md:text-xl text-gray-500 font-medium leading-relaxed">
+            Inferencia computacional de la progresión neoplásica.
+        </p>
+        <div class="mt-8 flex gap-4 justify-center">
+            <div class="h-1 w-12 bg-gray-800 rounded-full"></div>
+            <div class="h-1 w-12 bg-gray-600 rounded-full"></div>
+            <div class="h-1 w-12 bg-gray-400 rounded-full"></div>
+        </div>
+    </div>
+</div>
+{% endblock %}

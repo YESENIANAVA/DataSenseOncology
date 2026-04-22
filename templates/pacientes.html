@@ -1,0 +1,254 @@
+{% extends "base.html" %}
+
+{% block title %}Gestión de Pacientes - DataSense{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto space-y-6">
+
+    <div class="bg-gray-900 text-white p-6 rounded-3xl shadow-lg flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div class="flex items-center gap-4">
+            <div class="p-3 bg-blue-500/20 rounded-2xl border border-blue-500/30">
+                <i data-lucide="users" class="w-6 h-6 text-blue-400"></i>
+            </div>
+            <div>
+                <h1 class="text-xl font-black uppercase italic tracking-tight" id="header-title">Registro de Pacientes</h1>
+                <p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest" id="header-subtitle">Añadir nuevo expediente clínico</p>
+            </div>
+        </div>
+        <button onclick="limpiarFormulario()" id="btn-cancelar" class="hidden bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/50 px-5 py-2.5 rounded-xl text-sm font-bold transition flex items-center gap-2">
+            <i data-lucide="x-circle" class="w-4 h-4"></i> Cancelar Edición
+        </button>
+    </div>
+
+    <div class="flex flex-col xl:flex-row gap-6">
+        
+        <div class="w-full xl:w-2/3 bg-white p-6 md:p-8 rounded-3xl shadow-xl border border-gray-200">
+            <form action="/guardar_paciente" method="POST" id="formPaciente" class="space-y-6">
+                
+                <input type="hidden" name="paciente_id" id="paciente_id" value="">
+                <input type="hidden" name="medico_asignado" value="{{ doctor.username }}">
+                
+                <h2 class="text-blue-800 font-black uppercase italic border-b border-gray-100 pb-2">Datos Personales</h2>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Nombre Completo</label>
+                        <input type="text" name="nombre_completo" id="nombre_completo" required class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none transition">
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Edad</label>
+                            <input type="number" name="edad" id="edad" required class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none transition">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Género</label>
+                            <select name="genero" id="genero" required class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none transition">
+                                <option value="">Seleccione...</option>
+                                <option value="Masculino">Masculino</option>
+                                <option value="Femenino">Femenino</option>
+                                <option value="Otro">Otro</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="md:col-span-2">
+                        <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Dirección / Origen</label>
+                        <input type="text" name="direccion" id="direccion" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none transition">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Teléfono</label>
+                        <input type="tel" name="telefono" id="telefono" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none transition">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                        <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Estado Civil</label>
+                        <select name="estado_civil" id="estado_civil" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none transition">
+                            <option value="">Seleccione...</option>
+                            <option value="Soltero/a">Soltero/a</option>
+                            <option value="Casado/a">Casado/a</option>
+                            <option value="Divorciado/a">Divorciado/a</option>
+                            <option value="Viudo/a">Viudo/a</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Tipo de Sangre</label>
+                        <select name="tipo_sangre" id="tipo_sangre" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none transition font-bold text-red-600">
+                            <option value="" class="text-gray-800">N/A</option>
+                            <option value="A+">A+</option> <option value="A-">A-</option>
+                            <option value="B+">B+</option> <option value="B-">B-</option>
+                            <option value="O+">O+</option> <option value="O-">O-</option>
+                            <option value="AB+">AB+</option> <option value="AB-">AB-</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Religión</label>
+                        <input type="text" name="religion" id="religion" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none transition">
+                    </div>
+                </div>
+
+                <h2 class="text-blue-800 font-black uppercase italic border-b border-gray-100 pb-2 mt-8">Antecedentes Médicos</h2>
+                
+                <div class="grid grid-cols-1 gap-4">
+                    <div>
+                        <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Enfermedades Crónicas</label>
+                        <textarea name="enfermedad_cronica" id="enfermedad_cronica" rows="2" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none transition"></textarea>
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Antecedentes Patológicos</label>
+                        <textarea name="antecedentes_patologicos" id="antecedentes_patologicos" rows="2" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none transition"></textarea>
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Antecedentes Heredofamiliares</label>
+                        <textarea name="antecedentes_heredofamiliares" id="antecedentes_heredofamiliares" rows="2" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none transition"></textarea>
+                    </div>
+                </div>
+
+                <div class="pt-4 border-t border-gray-100">
+                    <button type="submit" id="btn-submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-black py-4 rounded-xl shadow-lg transition uppercase tracking-widest text-sm flex justify-center items-center gap-2">
+                        <i data-lucide="save" class="w-5 h-5"></i> Registrar Nuevo Paciente
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <div class="w-full xl:w-1/3 space-y-4">
+            <div class="bg-gray-900 p-6 rounded-3xl shadow-xl border border-gray-800">
+                <h3 class="text-white font-black uppercase tracking-widest text-sm mb-1 flex items-center gap-2">
+                    <i data-lucide="search" class="w-4 h-4 text-blue-400"></i> Buscar Expediente
+                </h3>
+                <p class="text-[10px] text-gray-400 mb-4 leading-tight">Seleccione un paciente de la lista para modificar su información.</p>
+                
+                <div class="relative group">
+                    <input type="text" id="buscadorP" onkeyup="filtrarPacientesModificar()" placeholder="Buscar por nombre..." autocomplete="off"
+                        class="w-full pl-4 pr-10 py-3 bg-gray-800 text-white border border-gray-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none transition placeholder-gray-500">
+                    <i data-lucide="search" class="absolute right-3 top-3 w-5 h-5 text-gray-500"></i>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-3xl shadow-xl border border-gray-200 overflow-hidden h-[500px] flex flex-col">
+                <div class="bg-gray-50 p-3 border-b border-gray-200">
+                    <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest text-center">Base de Datos de Pacientes</p>
+                </div>
+                <ul id="listaResultadosModificar" class="flex-1 overflow-y-auto custom-scrollbar divide-y divide-gray-100 p-2">
+                    </ul>
+            </div>
+        </div>
+
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    const baseDatosPacientes = [
+        {% for p in pacientes %}
+        { 
+            id: "{{ p.id }}", 
+            nombre_completo: "{{ p.nombre_completo | escape }}",
+            edad: "{{ p.edad }}",
+            genero: "{{ p.genero }}",
+            direccion: "{{ p.direccion | escape }}",
+            telefono: "{{ p.telefono }}",
+            estado_civil: "{{ p.estado_civil }}",
+            tipo_sangre: "{{ p.tipo_sangre }}",
+            religion: "{{ p.religion | escape }}",
+            enfermedad_cronica: "{{ p.enfermedad_cronica | escape }}",
+            antecedentes_patologicos: "{{ p.antecedentes_patologicos | escape }}",
+            antecedentes_heredofamiliares: "{{ p.antecedentes_heredofamiliares | escape }}"
+        },
+        {% endfor %}
+    ];
+
+    function renderizarLista(pacientesArray) {
+        const lista = document.getElementById('listaResultadosModificar');
+        lista.innerHTML = '';
+
+        if(pacientesArray.length === 0) {
+            lista.innerHTML = `<li class="p-6 text-sm text-gray-400 italic text-center">No hay coincidencias.</li>`;
+            return;
+        }
+
+        pacientesArray.forEach(p => {
+            const li = document.createElement('li');
+            li.className = "p-3 hover:bg-slate-50 border-b border-gray-100 transition-colors flex items-center justify-between group cursor-pointer";
+            
+            li.innerHTML = `
+                <div class="flex items-center gap-3 overflow-hidden flex-1" onclick="cargarDatosPorId('${p.id}')">
+                    <div class="w-8 h-8 bg-slate-100 text-slate-500 rounded-full flex items-center justify-center shrink-0">
+                        <i data-lucide="user" class="w-4 h-4"></i>
+                    </div>
+                    <div class="truncate">
+                        <p class="text-sm font-bold text-slate-700 truncate">${p.nombre_completo}</p>
+                        <p class="text-[9px] font-mono text-slate-400">ID: ${p.id}</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-1">
+                    <a href="/historial/${p.id}?user={{ doctor.username }}" 
+                        class="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="Ver Perfil">
+                        <i data-lucide="eye" class="w-4 h-4"></i>
+                    </a>
+                </div>
+            `;
+            lista.appendChild(li);
+        });
+        lucide.createIcons();
+    }
+
+    renderizarLista(baseDatosPacientes);
+
+    function filtrarPacientesModificar() {
+        const texto = document.getElementById('buscadorP').value.toLowerCase();
+        const filtrados = baseDatosPacientes.filter(p => 
+            p.nombre_completo.toLowerCase().includes(texto) || p.id.toString().includes(texto)
+        );
+        renderizarLista(filtrados);
+    }
+
+    function cargarDatosPorId(id) {
+        const paciente = baseDatosPacientes.find(p => p.id == id);
+        if(!paciente) return;
+
+        document.getElementById('paciente_id').value = paciente.id;
+        document.getElementById('nombre_completo').value = paciente.nombre_completo;
+        document.getElementById('edad').value = paciente.edad;
+        document.getElementById('genero').value = paciente.genero;
+        document.getElementById('direccion').value = paciente.direccion;
+        document.getElementById('telefono').value = paciente.telefono;
+        document.getElementById('estado_civil').value = paciente.estado_civil;
+        document.getElementById('tipo_sangre').value = paciente.tipo_sangre;
+        document.getElementById('religion').value = paciente.religion;
+        document.getElementById('enfermedad_cronica').value = paciente.enfermedad_cronica;
+        document.getElementById('antecedentes_patologicos').value = paciente.antecedentes_patologicos;
+        document.getElementById('antecedentes_heredofamiliares').value = paciente.antecedentes_heredofamiliares;
+
+        document.getElementById('header-title').innerText = "Modificar Expediente";
+        document.getElementById('header-subtitle').innerText = "Editando a: " + paciente.nombre_completo;
+        document.getElementById('btn-cancelar').classList.remove('hidden');
+        
+        const btnSubmit = document.getElementById('btn-submit');
+        btnSubmit.innerHTML = `<i data-lucide="refresh-cw" class="w-5 h-5"></i> Guardar Cambios`;
+        btnSubmit.classList.replace('bg-blue-600', 'bg-emerald-600');
+        
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        lucide.createIcons();
+    }
+
+    function limpiarFormulario() {
+        document.getElementById('formPaciente').reset();
+        document.getElementById('paciente_id').value = "";
+        
+        document.getElementById('header-title').innerText = "Registro de Pacientes";
+        document.getElementById('header-subtitle').innerText = "Añadir nuevo expediente clínico";
+        document.getElementById('btn-cancelar').classList.add('hidden');
+        
+        const btnSubmit = document.getElementById('btn-submit');
+        btnSubmit.innerHTML = `<i data-lucide="save" class="w-5 h-5"></i> Registrar Nuevo Paciente`;
+        btnSubmit.classList.replace('bg-emerald-600', 'bg-blue-600');
+        lucide.createIcons();
+    }
+</script>
+{% endblock %}
